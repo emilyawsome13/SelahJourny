@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Selah | A Calmer Bible Verse Workspace</title>
+  <meta
+    name="description"
+    content="Selah is a calmer Bible verse website with books, chapter reading, plans, saved verses, notes, account recovery, and grounded AI guidance."
+  >
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="page-shell">
+    <header class="site-header">
+      <a class="brand" href="#top" aria-label="Selah home">
+        <span class="brand-mark">S</span>
+        <span class="brand-copy">
+          <strong>Selah</strong>
+          <span>Bible Library</span>
+        </span>
+      </a>
+
+      <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="site-nav">
+        Menu
+      </button>
+
+      <div class="header-cluster">
+        <nav id="site-nav" class="site-nav" aria-label="Primary">
+          <a href="#features">Overview</a>
+          <a href="#rhythm">Plans</a>
+          <a href="#account">Account</a>
+          <a href="#community">Library</a>
+        </nav>
+
+        <div class="header-auth" id="header-auth">
+          <button class="button button-ghost" type="button" data-open-auth="login" data-guest-only>
+            Log In
+          </button>
+          <button class="button button-primary" type="button" data-open-auth="signup" data-guest-only>
+            Create Account
+          </button>
+          <span class="member-chip" id="member-chip" hidden>
+            <span class="member-dot" aria-hidden="true"></span>
+            <span id="member-chip-copy">Guest</span>
+          </span>
+          <button class="button button-secondary" id="header-logout" type="button" data-member-only hidden>
+            Log Out
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <main id="top">
+      <section class="hero section">
+        <div class="hero-copy reveal">
+          <p class="eyebrow">A calmer Bible website with working auth</p>
+          <h1>A Bible verse website built around books, plans, and a real reading rhythm.</h1>
+          <p class="hero-text">
+            Selah combines book navigation, chapter reading, saved verses, study notes,
+            personal reflection, account settings, password recovery, and AI guidance that
+            supports study instead of replacing it.
+          </p>
+          <div class="hero-actions">
+            <button class="button button-primary" type="button" data-open-auth="signup" data-guest-only>
+              Create Free Account
+            </button>
+            <a class="button button-secondary" href="#features">See Books And Plans</a>
+          </div>
+          <ul class="hero-metrics" aria-label="Product highlights">
+            <li>
+              <strong>Real member flow</strong>
+              <span>Signup, login, logout, and stored users</span>
+            </li>
+            <li>
+              <strong>Account recovery</strong>
+              <span>Password reset and welcome email flows already work</span>
+            </li>
+            <li>
+              <strong>Guided library</strong>
+              <span>Book reading, saved verses, plans, notes, and grounded AI help</span>
+            </li>
+          </ul>
+        </div>
+
+        <div class="hero-preview reveal">
+          <div class="device-frame">
+            <div class="preview-topbar">
+              <span>Today</span>
+              <span>Psalm 46</span>
+            </div>
+
+            <article class="verse-card">
+              <p class="card-label">Verse of the day</p>
+              <blockquote>
+                Be still, and know that I am God.
+              </blockquote>
+              <p class="verse-ref">Psalm 46:10</p>
+            </article>
+
+            <div class="preview-grid">
+              <article class="mini-card warm">
+              <p class="card-label">Reading focus</p>
+              <h2>John</h2>
+              <p>Continue reading and save verses worth revisiting later.</p>
+            </article>
+            <article class="mini-card">
+              <p class="card-label">Plan prompt</p>
+              <h2>What book or plan do you want to begin next?</h2>
+            </article>
+            </div>
+
+            <article class="habit-card">
+              <div>
+              <p class="card-label">Daily rhythm</p>
+              <h2>Read, save, note, return</h2>
+            </div>
+              <div class="habit-ring" aria-hidden="true">
+                <span>80%</span>
+              </div>
+            </article>
+
+            <article class="auth-preview-card">
+              <p class="card-label">Member account</p>
+              <h2 id="preview-title">Member library included</h2>
+              <p id="preview-copy">
+                Create an account to keep your verses, notes, plans, and AI history in one place.
+              </p>
+              <div class="preview-pill-row" aria-label="Account features">
+                <span>Password hashing</span>
+                <span>Session login</span>
+                <span>Welcome emails</span>
+              </div>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section id="features" class="section features">
+        <div class="section-heading reveal">
+          <p class="eyebrow">Overview</p>
+          <h2>Designed to feel calm enough to return to every day.</h2>
+          <p>
+            The strongest Bible products make reading and note-taking obvious on day one. Selah is
+            built around scripture, account memory, and a simple study rhythm instead of vague AI branding.
+          </p>
+        </div>
+
+        <div class="feature-grid">
+          <article class="feature-card reveal">
+            <span class="feature-number">01</span>
+            <h3>Book and chapter reading</h3>
+            <p>Open scripture by book, choose a chapter, and keep reading inside one calm library.</p>
+          </article>
+          <article class="feature-card reveal">
+            <span class="feature-number">02</span>
+            <h3>Saved verse library</h3>
+            <p>Keep the passages you want to return to without losing them in a generic notes app.</p>
+          </article>
+          <article class="feature-card reveal">
+            <span class="feature-number">03</span>
+            <h3>Notes and reflection</h3>
+            <p>Write observations on scripture and keep your response close to what you are reading.</p>
+          </article>
+          <article class="feature-card reveal">
+            <span class="feature-number">04</span>
+            <h3>Grounded AI guidance</h3>
+            <p>Use the AI guide as a study helper when you need it, without letting it replace the reading experience.</p>
+          </article>
+        </div>
+      </section>
+
+      <section id="rhythm" class="section rhythm">
+        <div class="section-heading reveal">
+          <p class="eyebrow">Reading plans</p>
+          <h2>Short paths for starting, restarting, and staying consistent.</h2>
+        </div>
+
+        <div class="timeline">
+          <article class="timeline-card reveal">
+            <span class="timeline-time">Day 1</span>
+            <h3>Start in John</h3>
+            <p>Open John 1 and begin with a clear starting point instead of guessing where to read.</p>
+          </article>
+          <article class="timeline-card reveal">
+            <span class="timeline-time">Day 2</span>
+            <h3>Psalms for peace</h3>
+            <p>Use a short plan when you want scripture for anxiety, steadiness, and prayer.</p>
+          </article>
+          <article class="timeline-card reveal">
+            <span class="timeline-time">Day 3</span>
+            <h3>Romans foundation</h3>
+            <p>Move into grace, identity, and renewal with a stronger sense of sequence.</p>
+          </article>
+        </div>
+      </section>
+
+      <section id="account" class="section account">
+        <div class="section-heading reveal">
+          <p class="eyebrow">Account access</p>
+          <h2>Member accounts are part of the product, not just the design.</h2>
+          <p>
+            New users can create an account, come back later, and keep reading progress, saved verses,
+            study notes, reflection, and AI history in one place.
+          </p>
+        </div>
+
+        <div class="account-grid">
+          <article class="account-card reveal">
+            <p class="eyebrow">Live state</p>
+            <h3 id="account-heading">Create your Selah account</h3>
+            <p id="account-copy">
+              Sign up to unlock the calmer member library. Your books, saved verses, plans, and
+              guided AI runs can all attach to one account.
+            </p>
+            <p class="status-message is-neutral" id="account-status-message" aria-live="polite">
+              No one is signed in yet.
+            </p>
+            <div class="account-actions" id="guest-actions">
+              <button class="button button-primary" type="button" data-open-auth="signup">
+                Create Account
+              </button>
+              <button class="button button-secondary" type="button" data-open-auth="login">
+                Log In
+              </button>
+            </div>
+            <div class="account-actions" id="member-actions" hidden>
+              <button class="button button-primary" id="resend-welcome-email" type="button">
+                Resend Welcome Email
+              </button>
+              <button class="button button-secondary" id="account-logout" type="button">
+                Log Out
+              </button>
+            </div>
+          </article>
+
+          <article class="detail-card reveal">
+            <p class="eyebrow">What works now</p>
+            <ul class="detail-list">
+              <li>Name, email, and password signup</li>
+              <li>Session-based login and logout</li>
+              <li>Forgot-password recovery with reset links</li>
+              <li>Bcrypt password hashing</li>
+              <li>Welcome email on new account creation</li>
+              <li>Welcome email resend for existing members</li>
+              <li>Books, reading plans, saved verses, and server-powered AI guidance</li>
+            </ul>
+          </article>
+        </div>
+      </section>
+
+      <section class="section showcase">
+        <div class="showcase-panel reveal">
+          <div class="showcase-copy">
+            <p class="eyebrow">Product direction</p>
+            <h2>This now feels like a Bible destination, not a generic app shell.</h2>
+            <p>
+              It feels modern enough to be credible, but warm enough to feel spiritually grounded.
+              That matters when the product needs to support daily reading, not just a one-time demo.
+            </p>
+          </div>
+          <div class="showcase-list" aria-label="Core modules">
+            <span>Book explorer</span>
+            <span>Reading plans</span>
+            <span>Saved verse library</span>
+            <span>Study notes</span>
+            <span>Member accounts</span>
+            <span>Email onboarding</span>
+          </div>
+        </div>
+      </section>
+
+      <section id="community" class="section testimonials">
+        <div class="section-heading reveal">
+          <p class="eyebrow">Stories</p>
+          <h2>A direction that supports both personal and church use.</h2>
+        </div>
+
+        <div class="testimonial-grid">
+          <article class="testimonial-card reveal">
+            <p>
+              "This feels like a quiet space instead of another noisy app. That alone makes it
+              stand out."
+            </p>
+            <span>Young adult devotional user</span>
+          </article>
+          <article class="testimonial-card reveal">
+            <p>
+              "The answered-prayer timeline is the strongest feature. It gives people a reason to
+              return and reflect."
+            </p>
+            <span>Church media lead</span>
+          </article>
+          <article class="testimonial-card reveal">
+            <p>
+              "It could work as a personal website first, then expand into small group and church
+              tools later."
+            </p>
+            <span>Product direction</span>
+          </article>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div class="auth-modal" id="auth-modal" hidden>
+    <div class="auth-backdrop" data-close-auth></div>
+    <div
+      class="auth-dialog"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="auth-title"
+      aria-describedby="auth-feedback"
+    >
+      <button class="modal-close" type="button" data-close-auth aria-label="Close dialog">
+        Close
+      </button>
+
+      <p class="eyebrow">Member access</p>
+      <h2 id="auth-title">Create your Selah account</h2>
+
+      <div class="auth-tabs" role="tablist" aria-label="Account forms">
+        <button
+          class="auth-tab is-active"
+          id="signup-tab"
+          type="button"
+          role="tab"
+          aria-selected="true"
+          aria-controls="signup-form"
+          data-auth-tab="signup"
+        >
+          Create account
+        </button>
+        <button
+          class="auth-tab"
+          id="login-tab"
+          type="button"
+          role="tab"
+          aria-selected="false"
+          aria-controls="login-form"
+          data-auth-tab="login"
+        >
+          Log in
+        </button>
+      </div>
+
+      <p class="status-message is-neutral" id="auth-feedback" aria-live="polite">
+        Use a real email address so your welcome email can be sent once SMTP is configured.
+      </p>
+
+      <form class="auth-form" id="signup-form" data-auth-form="signup">
+        <div class="form-row">
+          <label class="form-field">
+            <span>Name</span>
+            <input type="text" name="name" autocomplete="name" minlength="2" required>
+          </label>
+        </div>
+        <div class="form-row">
+          <label class="form-field">
+            <span>Email</span>
+            <input type="email" name="email" autocomplete="email" required>
+          </label>
+        </div>
+        <div class="form-row">
+          <label class="form-field">
+            <span>Password</span>
+            <input type="password" name="password" autocomplete="new-password" minlength="8" required>
+          </label>
+        </div>
+        <button class="button button-primary form-submit" type="submit">Create Account</button>
+      </form>
+
+      <form class="auth-form" id="login-form" data-auth-form="login" hidden>
+        <div class="form-row">
+          <label class="form-field">
+            <span>Email</span>
+            <input type="email" name="email" autocomplete="email" required>
+          </label>
+        </div>
+        <div class="form-row">
+          <label class="form-field">
+            <span>Password</span>
+            <input type="password" name="password" autocomplete="current-password" required>
+          </label>
+        </div>
+        <button class="auth-link" type="button" data-auth-switch="recover">
+          Forgot your password?
+        </button>
+        <button class="button button-primary form-submit" type="submit">Log In</button>
+      </form>
+
+      <form class="auth-form" id="recover-form" data-auth-form="recover" hidden>
+        <p class="auth-support-copy">
+          Enter the email tied to your Selah account and we will send a secure reset link.
+        </p>
+        <div class="form-row">
+          <label class="form-field">
+            <span>Email</span>
+            <input type="email" name="email" autocomplete="email" required>
+          </label>
+        </div>
+        <button class="button button-primary form-submit" type="submit">Send Reset Link</button>
+        <button class="auth-link" type="button" data-auth-switch="login">
+          Back to login
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
