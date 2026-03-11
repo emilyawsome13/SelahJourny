@@ -119,6 +119,61 @@ button {
 .dashboard-body .workspace-nav {
   flex: 1;
   justify-content: center;
+  gap: 0.4rem;
+  padding: 0.35rem;
+  border: 1px solid rgba(108, 92, 72, 0.14);
+  border-radius: 999px;
+  background: rgba(255, 249, 241, 0.78);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.dashboard-body .workspace-nav::-webkit-scrollbar {
+  display: none;
+}
+
+.dashboard-body .workspace-tab-button {
+  flex: 0 0 auto;
+  padding: 0.72rem 1rem;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  color: var(--muted);
+  background: transparent;
+  font: inherit;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: transform 180ms ease, border-color 180ms ease, color 180ms ease, background 180ms ease, box-shadow 180ms ease;
+}
+
+.dashboard-body .workspace-tab-button:hover,
+.dashboard-body .workspace-tab-button:focus-visible {
+  color: var(--forest);
+  border-color: rgba(36, 56, 46, 0.16);
+  background: rgba(255, 255, 255, 0.86);
+}
+
+.dashboard-body .workspace-tab-button.is-active {
+  color: var(--forest);
+  border-color: rgba(47, 111, 83, 0.24);
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 12px 28px rgba(36, 56, 46, 0.08);
+}
+
+.dashboard-body .dashboard-tab-panel.is-active {
+  animation: dashboard-panel-reveal 180ms ease;
+}
+
+@keyframes dashboard-panel-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .dashboard-body .workspace-hero {
@@ -1798,6 +1853,11 @@ h3 {
   gap: 0.75rem;
 }
 
+.dashboard-body .book-grid.is-compact {
+  grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
+  gap: 0.6rem;
+}
+
 .dashboard-body .book-card,
 .dashboard-body .verse-row,
 .dashboard-body .topic-verse-button {
@@ -1826,6 +1886,15 @@ h3 {
   margin-top: 0.4rem;
   color: var(--muted);
   font-size: 0.92rem;
+}
+
+.dashboard-body .book-grid.is-compact .book-card {
+  min-height: 0;
+  padding: 0.85rem 0.9rem;
+}
+
+.dashboard-body .book-grid.is-compact .book-card span {
+  font-size: 0.82rem;
 }
 
 .dashboard-body .book-spotlight-panel {

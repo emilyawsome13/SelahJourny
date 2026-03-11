@@ -136,6 +136,11 @@ const DEFAULT_USER_SETTINGS = {
   reminderTime: "07:30",
   weeklyDigest: true,
   experimentalLayout: true,
+  startTab: "browser",
+  preferredTranslationId: "BSB",
+  defaultGeneratorMode: "random",
+  showVerseReason: true,
+  compactBookCards: false,
   readingPosition: {
     translationId: "BSB",
     bookId: "JHN",
@@ -395,6 +400,23 @@ const AI_STUDIO_MODES = new Set([
   "experiment"
 ]);
 
+const WORKSPACE_TABS = new Set([
+  "overview",
+  "browser",
+  "generator",
+  "library",
+  "account"
+]);
+
+const VERSE_GENERATOR_MODES = new Set([
+  "random",
+  "daily",
+  "topic",
+  "testament",
+  "book",
+  "chapter"
+]);
+
 const URGENT_SUPPORT_KEYWORDS = [
   "suicide",
   "kill myself",
@@ -423,6 +445,16 @@ function normalizeAiVoice(value) {
 function normalizeReminderTime(value) {
   const reminderTime = String(value || "").trim();
   return /^\d{2}:\d{2}$/.test(reminderTime) ? reminderTime : DEFAULT_USER_SETTINGS.reminderTime;
+}
+
+function normalizeWorkspaceTab(value) {
+  const tab = String(value || "").trim().toLowerCase();
+  return WORKSPACE_TABS.has(tab) ? tab : DEFAULT_USER_SETTINGS.startTab;
+}
+
+function normalizeGeneratorModePreference(value) {
+  const mode = String(value || "").trim().toLowerCase();
+  return VERSE_GENERATOR_MODES.has(mode) ? mode : DEFAULT_USER_SETTINGS.defaultGeneratorMode;
 }
 
 function normalizeBoolean(value, fallback = false) {
@@ -1096,7 +1128,19 @@ async function buildAiBriefingResponse({ env, user, prayers, checkins }) {
   return sanitizeAiBriefingResponse(local, remote);
 }
 
-function buildWelcomeEmailHtml(displayName) {
+function escapeEmailHtml(value) {
+  return String(value || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function buildWelcomeEmailHtml(displayName, appUrl) {
+  const safeDisplayName = escapeEmailHtml(displayName || "there");
+  const safeAppUrl = escapeEmailHtml(appUrl || "");
+
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1112,28 +1156,42 @@ function buildWelcomeEmailHtml(displayName) {
           <tr>
             <td style="padding:36px 36px 24px;background:linear-gradient(135deg,#24382e 0%,#314a3d 100%);color:#fffaf1;">
               <p style="margin:0 0 12px;font-size:12px;letter-spacing:2px;text-transform:uppercase;color:#dbc18e;">Selah</p>
-              <h1 style="margin:0;font-size:34px;line-height:1.05;font-family:Georgia,serif;">Welcome to a quieter rhythm.</h1>
+              <h1 style="margin:0;font-size:34px;line-height:1.05;font-family:Georgia,serif;">Your account is ready.</h1>
             </td>
           </tr>
           <tr>
             <td style="padding:32px 36px;">
-              <p style="margin:0 0 16px;font-size:16px;line-height:1.7;">Hi ${displayName},</p>
+              <p style="margin:0 0 16px;font-size:16px;line-height:1.7;">Hi ${safeDisplayName},</p>
               <p style="margin:0 0 16px;font-size:16px;line-height:1.7;">
-                Your Selah account is ready. This is where prayer journaling, daily devotionals,
-                and answered-prayer reflection come together in one calm place.
+                Thank you for creating a Selah account. Selah is a focused Bible browser built for
+                reading scripture clearly, generating a verse when you need direction, and saving
+                the passages worth returning to.
               </p>
               <p style="margin:0 0 24px;font-size:16px;line-height:1.7;">
-                Start with a simple rhythm: read the daily verse, write one prayer, and return
-                tonight to remember what God did during the day.
+                You can jump in right away: open a book, load a chapter, generate a verse by topic
+                or book, and build a personal library of saved verses and study notes.
               </p>
               <div style="padding:18px 20px;border-radius:18px;background:#f3ecdf;border:1px solid #e3d7c3;">
-                <p style="margin:0 0 8px;font-size:12px;letter-spacing:2px;text-transform:uppercase;color:#b86e4b;">First steps</p>
-                <p style="margin:0;font-size:15px;line-height:1.7;color:#455148;">
-                  Create your first prayer entry, choose a daily focus, and build a steady habit.
-                </p>
+                <p style="margin:0 0 10px;font-size:12px;letter-spacing:2px;text-transform:uppercase;color:#b86e4b;">What to do next</p>
+                <ul style="margin:0;padding-left:18px;color:#455148;">
+                  <li style="margin:0 0 8px;font-size:15px;line-height:1.6;">Browse by book, chapter, and translation.</li>
+                  <li style="margin:0 0 8px;font-size:15px;line-height:1.6;">Use the verse generator for daily or topic-based prompts.</li>
+                  <li style="margin:0;font-size:15px;line-height:1.6;">Save verses and notes you want to revisit later.</li>
+                </ul>
               </div>
+              ${safeAppUrl ? `
+              <p style="margin:24px 0 0;">
+                <a href="${safeAppUrl}" style="display:inline-block;padding:14px 22px;border-radius:999px;background:#24382e;color:#fffaf1;text-decoration:none;font-weight:700;">
+                  Open Selah
+                </a>
+              </p>
+              <p style="margin:14px 0 0;font-size:14px;line-height:1.7;color:#5d685f;">
+                If the button does not work, copy and paste this link into your browser:<br>${safeAppUrl}
+              </p>
+              ` : ""}
               <p style="margin:24px 0 0;font-size:15px;line-height:1.7;color:#5d685f;">
-                Grace and peace,<br>Selah
+                If you did not create this account, you can safely ignore this email.<br><br>
+                Selah
               </p>
             </td>
           </tr>
@@ -1146,6 +1204,9 @@ function buildWelcomeEmailHtml(displayName) {
 }
 
 function buildPasswordResetEmailHtml(displayName, resetUrl) {
+  const safeDisplayName = escapeEmailHtml(displayName || "there");
+  const safeResetUrl = escapeEmailHtml(resetUrl || "");
+
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1166,7 +1227,7 @@ function buildPasswordResetEmailHtml(displayName, resetUrl) {
           </tr>
           <tr>
             <td style="padding:32px 36px;">
-              <p style="margin:0 0 16px;font-size:16px;line-height:1.7;">Hi ${displayName},</p>
+              <p style="margin:0 0 16px;font-size:16px;line-height:1.7;">Hi ${safeDisplayName},</p>
               <p style="margin:0 0 16px;font-size:16px;line-height:1.7;">
                 A request came in to reset your Selah password. Use the button below to choose a new one.
               </p>
@@ -1174,12 +1235,12 @@ function buildPasswordResetEmailHtml(displayName, resetUrl) {
                 This link expires in 1 hour. If you did not request it, you can safely ignore this email.
               </p>
               <p style="margin:0 0 24px;">
-                <a href="${resetUrl}" style="display:inline-block;padding:14px 22px;border-radius:999px;background:#24382e;color:#fffaf1;text-decoration:none;font-weight:700;">
+                <a href="${safeResetUrl}" style="display:inline-block;padding:14px 22px;border-radius:999px;background:#24382e;color:#fffaf1;text-decoration:none;font-weight:700;">
                   Reset Password
                 </a>
               </p>
               <p style="margin:0;font-size:14px;line-height:1.7;color:#5d685f;">
-                If the button does not work, copy and paste this link into your browser:<br>${resetUrl}
+                If the button does not work, copy and paste this link into your browser:<br>${safeResetUrl}
               </p>
             </td>
           </tr>
@@ -1191,16 +1252,25 @@ function buildPasswordResetEmailHtml(displayName, resetUrl) {
 </html>`;
 }
 
-function buildWelcomeEmailText(displayName) {
+function buildWelcomeEmailText(displayName, appUrl) {
   return [
     `Hi ${displayName},`,
     "",
-    "Welcome to Selah.",
+    "Your Selah account is ready.",
     "",
-    "Your account is ready. Start with a simple rhythm: read the daily verse,",
-    "write one prayer, and come back tonight to remember what God did during the day.",
+    "Selah is a focused Bible browser where you can read scripture clearly,",
+    "generate a verse when you need direction, and save notes worth returning to.",
     "",
-    "Grace and peace,",
+    "What to do next:",
+    "- Browse by book, chapter, and translation.",
+    "- Use the verse generator for daily or topic-based prompts.",
+    "- Save verses and study notes to your library.",
+    "",
+    "Open Selah:",
+    appUrl || "",
+    "",
+    "If you did not create this account, you can safely ignore this email.",
+    "",
     "Selah"
   ].join("\n");
 }
@@ -1512,9 +1582,10 @@ function createMailer({ env, storage }) {
 
   async function sendWelcomeEmail(user, options = {}) {
     const phase = options.phase === "resend" ? "resend" : "signup";
-    const subject = "Welcome to Selah";
-    const html = buildWelcomeEmailHtml(user.name);
-    const text = buildWelcomeEmailText(user.name);
+    const subject = "Your Selah account is ready";
+    const appUrl = String(options.appUrl || env.APP_BASE_URL || env.RENDER_EXTERNAL_URL || "").trim();
+    const html = buildWelcomeEmailHtml(user.name, appUrl);
+    const text = buildWelcomeEmailText(user.name, appUrl);
     return deliverEmail({
       prefix: "welcome",
       to: user.email,
@@ -1604,6 +1675,10 @@ function createApp(options = {}) {
 
   function getBaseUrl(request) {
     return String(env.APP_BASE_URL || env.RENDER_EXTERNAL_URL || "").trim() || `${request.protocol}://${request.get("host")}`;
+  }
+
+  function getWorkspaceUrl(request) {
+    return `${getBaseUrl(request).replace(/\/$/, "")}/app`;
   }
 
   function createPasswordResetRecord(token, emailStatus) {
@@ -2171,18 +2246,34 @@ function createApp(options = {}) {
         return;
       }
 
+      const currentSettings = hydrateUserRecord(user).settings;
+      const preferredTranslationId = normalizeTranslationId(
+        request.body.preferredTranslationId || currentSettings.preferredTranslationId || currentSettings.readingPosition.translationId
+      );
+
       user.settings = {
-        ...user.settings,
-        defaultAiMode: normalizeAiMode(request.body.defaultAiMode),
-        aiVoice: normalizeAiVoice(request.body.aiVoice),
-        reminderTime: normalizeReminderTime(request.body.reminderTime),
-        weeklyDigest: normalizeBoolean(request.body.weeklyDigest, user.settings?.weeklyDigest ?? true),
-        experimentalLayout: normalizeBoolean(request.body.experimentalLayout, user.settings?.experimentalLayout ?? true)
+        ...currentSettings,
+        defaultAiMode: normalizeAiMode(request.body.defaultAiMode || currentSettings.defaultAiMode),
+        aiVoice: normalizeAiVoice(request.body.aiVoice || currentSettings.aiVoice),
+        reminderTime: normalizeReminderTime(request.body.reminderTime || currentSettings.reminderTime),
+        weeklyDigest: normalizeBoolean(request.body.weeklyDigest, currentSettings.weeklyDigest),
+        experimentalLayout: normalizeBoolean(request.body.experimentalLayout, currentSettings.experimentalLayout),
+        startTab: normalizeWorkspaceTab(request.body.startTab || currentSettings.startTab),
+        preferredTranslationId,
+        defaultGeneratorMode: normalizeGeneratorModePreference(
+          request.body.defaultGeneratorMode || currentSettings.defaultGeneratorMode
+        ),
+        showVerseReason: normalizeBoolean(request.body.showVerseReason, currentSettings.showVerseReason),
+        compactBookCards: normalizeBoolean(request.body.compactBookCards, currentSettings.compactBookCards),
+        readingPosition: {
+          ...currentSettings.readingPosition,
+          translationId: preferredTranslationId
+        }
       };
       await storage.writeUsers(users);
 
       response.json({
-        message: "AI settings updated.",
+        message: "Account settings updated.",
         user: publicUser(user)
       });
     } catch (error) {
@@ -2268,7 +2359,10 @@ function createApp(options = {}) {
       await sessionRegenerate(request);
       request.session.userId = user.id;
 
-      const emailStatus = await mailer.sendWelcomeEmail(user, { phase: "signup" });
+      const emailStatus = await mailer.sendWelcomeEmail(user, {
+        phase: "signup",
+        appUrl: getWorkspaceUrl(request)
+      });
       user.welcomeEmail = buildWelcomeEmailRecord(emailStatus);
       await storage.writeUsers(users);
 
@@ -2654,7 +2748,10 @@ function createApp(options = {}) {
         return;
       }
 
-      const emailStatus = await mailer.sendWelcomeEmail(user, { phase: "resend" });
+      const emailStatus = await mailer.sendWelcomeEmail(user, {
+        phase: "resend",
+        appUrl: getWorkspaceUrl(request)
+      });
       user.welcomeEmail = buildWelcomeEmailRecord(emailStatus);
       await storage.writeUsers(users);
 

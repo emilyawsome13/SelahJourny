@@ -98,6 +98,11 @@ async function main() {
 
     const previewFiles = await fs.readdir(emailDir);
     assert.equal(previewFiles.length, 1);
+    const welcomePreviewHtml = await fs.readFile(path.join(emailDir, previewFiles[0]), "utf8");
+    assert.ok(welcomePreviewHtml.includes("Your account is ready."));
+    assert.ok(welcomePreviewHtml.includes("Open Selah"));
+    assert.ok(welcomePreviewHtml.includes("Browse by book, chapter, and translation."));
+    assert.ok(welcomePreviewHtml.includes("/app"));
 
     const cookie = getCookie(signupResponse);
     assert.ok(cookie.includes("selah.sid="));
@@ -126,6 +131,8 @@ async function main() {
     assert.ok(appHtml.includes("Generate Verse"));
     assert.ok(appHtml.includes("Your verse library"));
     assert.ok(appHtml.includes("Your account"));
+    assert.ok(appHtml.includes("workspace-tab-button"));
+    assert.ok(appHtml.includes("Workspace settings"));
 
     const sessionResponse = await fetch(`${baseUrl}/api/session`, {
       headers: {
@@ -139,6 +146,9 @@ async function main() {
     assert.equal(sessionData.user.name, "Esther");
     assert.equal(sessionData.user.profile.focus, "Presence over performance");
     assert.equal(sessionData.user.settings.defaultAiMode, "companion");
+    assert.equal(sessionData.user.settings.startTab, "browser");
+    assert.equal(sessionData.user.settings.preferredTranslationId, "BSB");
+    assert.equal(sessionData.user.settings.defaultGeneratorMode, "random");
 
     const prayersResponse = await fetch(`${baseUrl}/api/prayers`, {
       headers: {
@@ -276,7 +286,12 @@ async function main() {
         aiVoice: "courageous",
         reminderTime: "06:45",
         weeklyDigest: false,
-        experimentalLayout: false
+        experimentalLayout: false,
+        startTab: "generator",
+        preferredTranslationId: "KJV",
+        defaultGeneratorMode: "daily",
+        showVerseReason: false,
+        compactBookCards: true
       })
     });
 
@@ -286,6 +301,12 @@ async function main() {
     assert.equal(settingsUpdateData.user.settings.aiVoice, "courageous");
     assert.equal(settingsUpdateData.user.settings.reminderTime, "06:45");
     assert.equal(settingsUpdateData.user.settings.weeklyDigest, false);
+    assert.equal(settingsUpdateData.user.settings.startTab, "generator");
+    assert.equal(settingsUpdateData.user.settings.preferredTranslationId, "KJV");
+    assert.equal(settingsUpdateData.user.settings.defaultGeneratorMode, "daily");
+    assert.equal(settingsUpdateData.user.settings.showVerseReason, false);
+    assert.equal(settingsUpdateData.user.settings.compactBookCards, true);
+    assert.equal(settingsUpdateData.user.settings.readingPosition.translationId, "KJV");
     assert.equal(settingsUpdateData.user.settings.readingPosition.bookId, "PSA");
 
     const passwordChangeResponse = await fetch(`${baseUrl}/api/account/password`, {

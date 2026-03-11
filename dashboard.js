@@ -3,6 +3,9 @@ const dashboardMemberName = document.querySelector("#dashboard-member-name");
 const dashboardStatus = document.querySelector("#dashboard-status");
 const dashboardLogout = document.querySelector("#dashboard-logout");
 const dashboardResendEmail = document.querySelector("#dashboard-resend-email");
+const tabButtons = Array.from(document.querySelectorAll(".workspace-tab-button[data-tab-target]"));
+const tabPanels = Array.from(document.querySelectorAll("[data-tab-panel]"));
+const tabShortcutButtons = Array.from(document.querySelectorAll("[data-open-tab]"));
 
 const statBooks = document.querySelector("#stat-books");
 const statTopics = document.querySelector("#stat-topics");
@@ -94,6 +97,16 @@ const profileFormStatus = document.querySelector("#profile-form-status");
 
 const passwordForm = document.querySelector("#password-form");
 const passwordFormStatus = document.querySelector("#password-form-status");
+const settingsForm = document.querySelector("#settings-form");
+const settingsStartTab = document.querySelector("#settings-start-tab");
+const settingsPreferredTranslation = document.querySelector("#settings-preferred-translation");
+const settingsDefaultGeneratorMode = document.querySelector("#settings-default-generator-mode");
+const settingsAiVoice = document.querySelector("#settings-ai-voice");
+const settingsReminderTime = document.querySelector("#settings-reminder-time");
+const settingsWeeklyDigest = document.querySelector("#settings-weekly-digest");
+const settingsShowVerseReason = document.querySelector("#settings-show-verse-reason");
+const settingsCompactBookCards = document.querySelector("#settings-compact-book-cards");
+const settingsFormStatus = document.querySelector("#settings-form-status");
 
 const generatorModeLabels = {
   random: "Random verse",
@@ -103,6 +116,8 @@ const generatorModeLabels = {
   book: "Book verse",
   chapter: "Chapter verse"
 };
+
+const workspaceTabs = tabPanels.map((panel) => panel.dataset.tabPanel).filter(Boolean);
 
 const state = {
   user: null,
@@ -123,7 +138,8 @@ const state = {
   generatorOffset: 0,
   quickGeneratorOffset: 0,
   savedVerses: [],
-  studyNotes: []
+  studyNotes: [],
+  activeTab: "overview"
 };
 
 function escapeHtml(value) {
@@ -158,6 +174,77 @@ function formatDate(value) {
 
 function redirectToLogin() {
   window.location.replace("/?auth=login");
+}
+
+function normalizeWorkspaceTab(value) {
+  const tabId = String(value || "")
+    .trim()
+    .replace(/^#/, "")
+    .toLowerCase();
+
+  return workspaceTabs.includes(tabId) ? tabId : "";
+}
+
+function getPreferredStartTab() {
+  return normalizeWorkspaceTab(state.user?.settings?.startTab) || "browser";
+}
+
+function setActiveTab(tabId, options = {}) {
+  const nextTab = normalizeWorkspaceTab(tabId) || getPreferredStartTab();
+  const previousTab = state.activeTab;
+  state.activeTab = nextTab;
+
+  tabButtons.forEach((button) => {
+    const isActive = button.dataset.tabTarget === nextTab;
+    button.classList.toggle("is-active", isActive);
+    button.setAttribute("aria-selected", String(isActive));
+    button.tabIndex = isActive ? 0 : -1;
+  });
+
+  tabPanels.forEach((panel) => {
+    const isActive = panel.dataset.tabPanel === nextTab;
+    panel.hidden = !isActive;
+    panel.classList.toggle("is-active", isActive);
+  });
+
+  if (options.updateHash !== false) {
+    const nextHash = `#${nextTab}`;
+
+    if (window.location.hash !== nextHash) {
+      history.replaceState(null, "", `${window.location.pathname}${window.location.search}${nextHash}`);
+    }
+  }
+
+  if (previousTab !== nextTab) {
+    window.scrollTo({ top: 0, left: 0 });
+  }
+}
+
+function handleTabKeydown(event) {
+  const currentIndex = tabButtons.findIndex((button) => button === event.currentTarget);
+
+  if (currentIndex < 0) {
+    return;
+  }
+
+  let nextIndex = currentIndex;
+
+  if (event.key === "ArrowRight") {
+    nextIndex = (currentIndex + 1) % tabButtons.length;
+  } else if (event.key === "ArrowLeft") {
+    nextIndex = (currentIndex - 1 + tabButtons.length) % tabButtons.length;
+  } else if (event.key === "Home") {
+    nextIndex = 0;
+  } else if (event.key === "End") {
+    nextIndex = tabButtons.length - 1;
+  } else {
+    return;
+  }
+
+  event.preventDefault();
+  const nextButton = tabButtons[nextIndex];
+  nextButton.focus();
+  setActiveTab(nextButton.dataset.tabTarget);
 }
 
 function getBookMeta(bookId) {
@@ -255,6 +342,9 @@ function renderContinueReading() {
 }
 
 function renderQuickVerse() {
+  const showReason = state.user?.settings?.showVerseReason ?? true;
+  quickVerseReason.hidden = !showReason;
+
   if (!state.quickVerse) {
     quickVerseReference.textContent = "Waiting for a verse";
     quickVerseText.textContent = "A generated verse will appear here.";
@@ -272,6 +362,9 @@ function renderQuickVerse() {
 }
 
 function renderGeneratedVerse() {
+  const showReason = state.user?.settings?.showVerseReason ?? true;
+  generatedVerseReason.hidden = !showReason;
+
   if (!state.generatedVerse) {
     generatedVerseReference.textContent = "Waiting for a verse";
     generatedVerseText.textContent = "A generated verse will appear here.";
@@ -335,6 +428,7 @@ function renderBookSelects() {
 function renderBookList() {
   const books = getFilteredBooks();
 
+  browserBookList.classList.toggle("is-compact", Boolean(state.user?.settings?.compactBookCards));
   browserBookCount.textContent = `${books.length} book${books.length === 1 ? "" : "s"}`;
   browserBookList.innerHTML = books.map((book) => `
     <button
@@ -388,6 +482,30 @@ function renderGeneratorTopics() {
       ${escapeHtml(topic.topic)}
     </button>
   `).join("");
+}
+
+function renderSettingsForm() {
+  if (!state.user) {
+    return;
+  }
+
+  const translationOptions = state.translations.length
+    ? state.translations.map((translation) => (
+      `<option value="${escapeHtml(translation.id)}">${escapeHtml(translation.shortName)} - ${escapeHtml(translation.englishName)}</option>`
+    )).join("")
+    : `<option value="${escapeHtml(state.user.settings?.preferredTranslationId || state.readingPosition.translationId)}">${escapeHtml(state.user.settings?.preferredTranslationId || state.readingPosition.translationId)}</option>`;
+
+  settingsPreferredTranslation.innerHTML = translationOptions;
+  settingsStartTab.value = normalizeWorkspaceTab(state.user.settings?.startTab) || "browser";
+  settingsPreferredTranslation.value = state.user.settings?.preferredTranslationId || state.readingPosition.translationId;
+  settingsDefaultGeneratorMode.value = generatorModeLabels[state.user.settings?.defaultGeneratorMode]
+    ? state.user.settings.defaultGeneratorMode
+    : "random";
+  settingsAiVoice.value = state.user.settings?.aiVoice || "grounded";
+  settingsReminderTime.value = state.user.settings?.reminderTime || "07:30";
+  settingsWeeklyDigest.checked = state.user.settings?.weeklyDigest ?? true;
+  settingsShowVerseReason.checked = state.user.settings?.showVerseReason ?? true;
+  settingsCompactBookCards.checked = state.user.settings?.compactBookCards ?? false;
 }
 
 function renderSavedVerses() {
@@ -480,7 +598,12 @@ function applyUser(user) {
     ...(user.settings?.readingPosition || {})
   };
 
+  setGeneratorMode(user.settings?.defaultGeneratorMode || state.generatorMode);
+  renderSettingsForm();
   renderContinueReading();
+  renderBookList();
+  renderQuickVerse();
+  renderGeneratedVerse();
   setMessage(dashboardStatus, status.message, status.tone);
 }
 
@@ -536,9 +659,14 @@ async function loadBootstrap() {
     ...state.readingPosition,
     ...(data.readingPosition || {})
   };
+
+  if (state.user?.settings?.preferredTranslationId) {
+    state.readingPosition.translationId = state.user.settings.preferredTranslationId;
+  }
+
   state.quickVerse = {
     ...data.verseOfDay,
-    translationId: "BSB",
+    translationId: data.verseOfDay?.translationId || "BSB",
     testament: getBookMeta(data.verseOfDay?.bookId)?.testament || null,
     mode: "daily",
     reason: "This is today's featured verse inside Selah."
@@ -548,6 +676,8 @@ async function loadBootstrap() {
   renderBookSelects();
   renderBookList();
   renderGeneratorTopics();
+  renderSettingsForm();
+  setGeneratorMode(state.user?.settings?.defaultGeneratorMode || state.generatorMode);
   renderQuickVerse();
   renderGeneratedVerse();
   renderContinueReading();
@@ -631,13 +761,13 @@ async function openPassage(verse) {
     return;
   }
 
+  setActiveTab("browser");
   await loadChapter({
     translationId: verse.translationId || state.readingPosition.translationId,
     bookId: verse.bookId,
     chapter: verse.chapter,
     highlightVerse: verse.verse
   });
-  window.location.hash = "browser";
 }
 
 async function runGenerator({
@@ -807,8 +937,8 @@ function handleVerseListClick(event) {
 }
 
 function focusNoteForm() {
+  setActiveTab("browser");
   studyNoteTitle.focus();
-  window.location.hash = "browser";
 }
 
 async function handleStudyNoteSubmit(event) {
@@ -854,6 +984,48 @@ async function handleProfileSubmit(event) {
     setMessage(profileFormStatus, data.message, "success");
   } catch (error) {
     setMessage(profileFormStatus, error.message, "error");
+  } finally {
+    submitButton.disabled = false;
+  }
+}
+
+async function handleSettingsSubmit(event) {
+  event.preventDefault();
+  const submitButton = settingsForm.querySelector('button[type="submit"]');
+  const preferredTranslationId = settingsPreferredTranslation.value || state.readingPosition.translationId;
+
+  submitButton.disabled = true;
+  setMessage(settingsFormStatus, "Saving settings...", "neutral");
+
+  try {
+    const data = await requestJson("/api/account/settings", {
+      method: "PATCH",
+      body: JSON.stringify({
+        startTab: settingsStartTab.value,
+        preferredTranslationId,
+        defaultGeneratorMode: settingsDefaultGeneratorMode.value,
+        aiVoice: settingsAiVoice.value,
+        reminderTime: settingsReminderTime.value,
+        weeklyDigest: settingsWeeklyDigest.checked,
+        showVerseReason: settingsShowVerseReason.checked,
+        compactBookCards: settingsCompactBookCards.checked
+      })
+    });
+
+    applyUser(data.user);
+
+    if (state.currentChapter && state.currentChapter.translation.id !== preferredTranslationId) {
+      await loadChapter({
+        translationId: preferredTranslationId,
+        bookId: state.readingPosition.bookId,
+        chapter: state.readingPosition.chapter,
+        highlightVerse: state.currentContextVerse?.verse
+      });
+    }
+
+    setMessage(settingsFormStatus, data.message, "success");
+  } catch (error) {
+    setMessage(settingsFormStatus, error.message, "error");
   } finally {
     submitButton.disabled = false;
   }
@@ -976,6 +1148,8 @@ async function loadWorkspace() {
       await loadChapter(state.readingPosition);
     }
 
+    setActiveTab(normalizeWorkspaceTab(window.location.hash) || getPreferredStartTab());
+
     const firstFailure = results.find((result) => result.status === "rejected");
 
     if (firstFailure) {
@@ -993,6 +1167,24 @@ async function loadWorkspace() {
 
 dashboardLogout.addEventListener("click", handleDashboardLogout);
 dashboardResendEmail.addEventListener("click", handleResendEmail);
+tabButtons.forEach((button) => {
+  button.addEventListener("click", () => {
+    setActiveTab(button.dataset.tabTarget);
+  });
+  button.addEventListener("keydown", handleTabKeydown);
+});
+tabShortcutButtons.forEach((button) => {
+  button.addEventListener("click", () => {
+    setActiveTab(button.dataset.openTab);
+  });
+});
+window.addEventListener("hashchange", () => {
+  const requestedTab = normalizeWorkspaceTab(window.location.hash);
+
+  if (requestedTab) {
+    setActiveTab(requestedTab, { updateHash: false });
+  }
+});
 
 quickVerseSaveButton.addEventListener("click", () => {
   void saveVerse(state.quickVerse);
@@ -1009,8 +1201,8 @@ quickGenerateAnotherButton.addEventListener("click", () => {
 });
 
 continueReadingButton.addEventListener("click", () => {
+  setActiveTab("browser");
   void loadChapter(state.readingPosition);
-  window.location.hash = "browser";
 });
 
 browserTranslation.addEventListener("change", () => {
@@ -1058,7 +1250,7 @@ generateFromSelectionButton.addEventListener("click", () => {
     chapter: state.currentContextVerse.chapter,
     offset: 0
   });
-  window.location.hash = "generator";
+  setActiveTab("generator");
 });
 selectedVerseToNoteButton.addEventListener("click", focusNoteForm);
 studyNoteForm.addEventListener("submit", handleStudyNoteSubmit);
@@ -1119,6 +1311,7 @@ studyNotesList.addEventListener("click", (event) => {
 });
 
 profileForm.addEventListener("submit", handleProfileSubmit);
+settingsForm.addEventListener("submit", handleSettingsSubmit);
 passwordForm.addEventListener("submit", handlePasswordSubmit);
 
 setGeneratorMode(state.generatorMode);

@@ -21,12 +21,66 @@
         </span>
       </a>
 
-      <nav class="site-nav workspace-nav" aria-label="Selah sections">
-        <a href="#overview">Overview</a>
-        <a href="#browser">Browser</a>
-        <a href="#generator">Generator</a>
-        <a href="#library">Library</a>
-        <a href="#account">Account</a>
+      <nav class="site-nav workspace-nav" aria-label="Selah sections" role="tablist">
+        <button
+          class="workspace-tab-button is-active"
+          type="button"
+          data-tab-target="overview"
+          role="tab"
+          id="tab-trigger-overview"
+          aria-controls="overview"
+          aria-selected="true"
+        >
+          Overview
+        </button>
+        <button
+          class="workspace-tab-button"
+          type="button"
+          data-tab-target="browser"
+          role="tab"
+          id="tab-trigger-browser"
+          aria-controls="browser"
+          aria-selected="false"
+          tabindex="-1"
+        >
+          Browser
+        </button>
+        <button
+          class="workspace-tab-button"
+          type="button"
+          data-tab-target="generator"
+          role="tab"
+          id="tab-trigger-generator"
+          aria-controls="generator"
+          aria-selected="false"
+          tabindex="-1"
+        >
+          Generator
+        </button>
+        <button
+          class="workspace-tab-button"
+          type="button"
+          data-tab-target="library"
+          role="tab"
+          id="tab-trigger-library"
+          aria-controls="library"
+          aria-selected="false"
+          tabindex="-1"
+        >
+          Library
+        </button>
+        <button
+          class="workspace-tab-button"
+          type="button"
+          data-tab-target="account"
+          role="tab"
+          id="tab-trigger-account"
+          aria-controls="account"
+          aria-selected="false"
+          tabindex="-1"
+        >
+          Account
+        </button>
       </nav>
 
       <div class="dashboard-header-actions">
@@ -44,7 +98,13 @@
     </header>
 
     <main class="dashboard-main">
-      <section class="workspace-hero section" id="overview">
+      <section
+        class="workspace-hero section dashboard-tab-panel is-active"
+        id="overview"
+        data-tab-panel="overview"
+        role="tabpanel"
+        aria-labelledby="tab-trigger-overview"
+      >
         <div class="card workspace-hero-panel browser-hero-panel">
           <p class="eyebrow">Bible browser and verse generator</p>
           <h1 id="dashboard-greeting">Loading your Bible browser...</h1>
@@ -53,8 +113,8 @@
             without all the extra concept layers that were getting in the way.
           </p>
           <div class="hero-actions">
-            <a class="button button-primary" href="#browser">Open browser</a>
-            <a class="button button-secondary" href="#generator">Open generator</a>
+            <button class="button button-primary" type="button" data-open-tab="browser">Open browser</button>
+            <button class="button button-secondary" type="button" data-open-tab="generator">Open generator</button>
           </div>
           <p class="status-message is-neutral" id="dashboard-status" aria-live="polite">
             Loading your Bible browser...
@@ -138,7 +198,14 @@
         </aside>
       </section>
 
-      <section class="section" id="browser">
+      <section
+        class="section dashboard-tab-panel"
+        id="browser"
+        data-tab-panel="browser"
+        role="tabpanel"
+        aria-labelledby="tab-trigger-browser"
+        hidden
+      >
         <div class="section-heading">
           <div>
             <h2>Browser</h2>
@@ -277,7 +344,14 @@
         </article>
       </section>
 
-      <section class="section" id="generator">
+      <section
+        class="section dashboard-tab-panel"
+        id="generator"
+        data-tab-panel="generator"
+        role="tabpanel"
+        aria-labelledby="tab-trigger-generator"
+        hidden
+      >
         <div class="section-heading">
           <div>
             <h2>Verse Generator</h2>
@@ -370,7 +444,14 @@
         </div>
       </section>
 
-      <section class="section" id="library">
+      <section
+        class="section dashboard-tab-panel"
+        id="library"
+        data-tab-panel="library"
+        role="tabpanel"
+        aria-labelledby="tab-trigger-library"
+        hidden
+      >
         <div class="section-heading">
           <div>
             <h2>Library</h2>
@@ -401,7 +482,14 @@
         </div>
       </section>
 
-      <section class="section" id="account">
+      <section
+        class="section dashboard-tab-panel"
+        id="account"
+        data-tab-panel="account"
+        role="tabpanel"
+        aria-labelledby="tab-trigger-account"
+        hidden
+      >
         <div class="section-heading">
           <div>
             <h2>Account</h2>
@@ -409,7 +497,7 @@
           </div>
         </div>
 
-        <div class="workspace-two-column">
+        <div class="account-grid">
           <article class="card panel account-panel">
             <div class="panel-heading">
               <div>
@@ -462,6 +550,81 @@
             </p>
           </article>
 
+          <article class="card panel account-panel">
+            <div class="panel-heading">
+              <div>
+                <p class="card-label">Preferences</p>
+                <h2>Workspace settings</h2>
+              </div>
+            </div>
+
+            <form class="stack-form" id="settings-form">
+              <label class="form-field">
+                <span>Start on this tab</span>
+                <select id="settings-start-tab" name="startTab" class="form-select">
+                  <option value="browser">Browser</option>
+                  <option value="overview">Overview</option>
+                  <option value="generator">Generator</option>
+                  <option value="library">Library</option>
+                  <option value="account">Account</option>
+                </select>
+              </label>
+
+              <label class="form-field">
+                <span>Preferred translation</span>
+                <select id="settings-preferred-translation" name="preferredTranslationId" class="form-select"></select>
+              </label>
+
+              <label class="form-field">
+                <span>Default generator mode</span>
+                <select id="settings-default-generator-mode" name="defaultGeneratorMode" class="form-select">
+                  <option value="random">Random verse</option>
+                  <option value="daily">Verse of the day</option>
+                  <option value="topic">Topic verse</option>
+                  <option value="testament">Testament verse</option>
+                  <option value="book">Book verse</option>
+                  <option value="chapter">Chapter verse</option>
+                </select>
+              </label>
+
+              <label class="form-field">
+                <span>Selah voice</span>
+                <select id="settings-ai-voice" name="aiVoice" class="form-select">
+                  <option value="grounded">Grounded</option>
+                  <option value="gentle">Gentle</option>
+                  <option value="courageous">Courageous</option>
+                  <option value="poetic">Poetic</option>
+                </select>
+              </label>
+
+              <label class="form-field">
+                <span>Reminder time</span>
+                <input id="settings-reminder-time" name="reminderTime" type="time">
+              </label>
+
+              <label class="toggle-field">
+                <input id="settings-weekly-digest" name="weeklyDigest" type="checkbox">
+                <span>Send the weekly scripture digest</span>
+              </label>
+
+              <label class="toggle-field">
+                <input id="settings-show-verse-reason" name="showVerseReason" type="checkbox">
+                <span>Show why each verse was selected</span>
+              </label>
+
+              <label class="toggle-field">
+                <input id="settings-compact-book-cards" name="compactBookCards" type="checkbox">
+                <span>Use compact book cards in the browser</span>
+              </label>
+
+              <button class="button button-primary" type="submit">Save Settings</button>
+            </form>
+
+            <p class="status-message is-neutral" id="settings-form-status" aria-live="polite">
+              Shape how Selah opens, reads, and presents generated verses.
+            </p>
+          </article>
+
           <article class="card panel account-panel security-panel">
             <div class="panel-heading">
               <div>
@@ -489,9 +652,9 @@
             </p>
 
             <article class="cta-card">
-              <p class="card-label">Current direction</p>
+              <p class="card-label">Delivery</p>
               <p class="dashboard-card-copy">
-                Selah is now centered on browsing scripture and generating verses, with saved notes and verses as support.
+                If you change email settings or want to confirm deliverability again, resend the welcome email from the header.
               </p>
             </article>
           </article>
