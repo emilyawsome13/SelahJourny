@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Selah | A Calmer Bible Verse Workspace</title>
+  <title>Selah | Bible Browser and Verse Generator</title>
   <meta
     name="description"
-    content="Selah is a calmer Bible verse website with books, chapter reading, plans, saved verses, notes, account recovery, and grounded AI guidance."
+    content="Selah is a Bible browser and verse generator with chapter reading, saved verses, notes, account recovery, and grounded AI guidance."
   >
   <link rel="stylesheet" href="styles.css">
 </head>
@@ -28,7 +28,7 @@
       <div class="header-cluster">
         <nav id="site-nav" class="site-nav" aria-label="Primary">
           <a href="#features">Overview</a>
-          <a href="#rhythm">Plans</a>
+          <a href="#rhythm">Generator</a>
           <a href="#account">Account</a>
           <a href="#community">Library</a>
         </nav>
@@ -54,18 +54,17 @@
     <main id="top">
       <section class="hero section">
         <div class="hero-copy reveal">
-          <p class="eyebrow">A calmer Bible website with working auth</p>
-          <h1>A Bible verse website built around books, plans, and a real reading rhythm.</h1>
+          <p class="eyebrow">A Bible browser with working auth</p>
+          <h1>A Bible browser and verse generator that gets to the point.</h1>
           <p class="hero-text">
-            Selah combines book navigation, chapter reading, saved verses, study notes,
-            personal reflection, account settings, password recovery, and AI guidance that
-            supports study instead of replacing it.
+            Selah now centers two core tools: browse scripture by book and chapter, or generate a verse
+            by topic, testament, book, or chapter. Saved verses and notes stay attached to your account.
           </p>
           <div class="hero-actions">
             <button class="button button-primary" type="button" data-open-auth="signup" data-guest-only>
               Create Free Account
             </button>
-            <a class="button button-secondary" href="#features">See Books And Plans</a>
+            <a class="button button-secondary" href="#features">See Browser And Generator</a>
           </div>
           <ul class="hero-metrics" aria-label="Product highlights">
             <li>
@@ -77,8 +76,8 @@
               <span>Password reset and welcome email flows already work</span>
             </li>
             <li>
-              <strong>Guided library</strong>
-              <span>Book reading, saved verses, plans, notes, and grounded AI help</span>
+              <strong>Focused product</strong>
+              <span>Bible browsing, verse generation, saved verses, notes, and grounded AI help</span>
             </li>
           </ul>
         </div>
@@ -105,15 +104,15 @@
               <p>Continue reading and save verses worth revisiting later.</p>
             </article>
             <article class="mini-card">
-              <p class="card-label">Plan prompt</p>
-              <h2>What book or plan do you want to begin next?</h2>
+              <p class="card-label">Generator prompt</p>
+              <h2>Generate a verse by topic, testament, or book.</h2>
             </article>
             </div>
 
             <article class="habit-card">
               <div>
               <p class="card-label">Daily rhythm</p>
-              <h2>Read, save, note, return</h2>
+              <h2>Browse, generate, save, return</h2>
             </div>
               <div class="habit-ring" aria-hidden="true">
                 <span>80%</span>
@@ -124,7 +123,7 @@
               <p class="card-label">Member account</p>
               <h2 id="preview-title">Member library included</h2>
               <p id="preview-copy">
-                Create an account to keep your verses, notes, plans, and AI history in one place.
+                Create an account to keep your verses, notes, generated picks, and AI history in one place.
               </p>
               <div class="preview-pill-row" aria-label="Account features">
                 <span>Password hashing</span>
@@ -141,8 +140,8 @@
           <p class="eyebrow">Overview</p>
           <h2>Designed to feel calm enough to return to every day.</h2>
           <p>
-            The strongest Bible products make reading and note-taking obvious on day one. Selah is
-            built around scripture, account memory, and a simple study rhythm instead of vague AI branding.
+            The strongest Bible products make the main tool obvious on day one. Selah is now built around
+            a scripture browser and a verse generator instead of stacking too many ideas into one page.
           </p>
         </div>
 
@@ -154,16 +153,21 @@
           </article>
           <article class="feature-card reveal">
             <span class="feature-number">02</span>
+            <h3>Verse generator</h3>
+            <p>Generate a verse by theme, testament, book, or chapter when you want a starting point fast.</p>
+          </article>
+          <article class="feature-card reveal">
+            <span class="feature-number">03</span>
             <h3>Saved verse library</h3>
             <p>Keep the passages you want to return to without losing them in a generic notes app.</p>
           </article>
           <article class="feature-card reveal">
-            <span class="feature-number">03</span>
+            <span class="feature-number">04</span>
             <h3>Notes and reflection</h3>
             <p>Write observations on scripture and keep your response close to what you are reading.</p>
           </article>
           <article class="feature-card reveal">
-            <span class="feature-number">04</span>
+            <span class="feature-number">05</span>
             <h3>Grounded AI guidance</h3>
             <p>Use the AI guide as a study helper when you need it, without letting it replace the reading experience.</p>
           </article>
@@ -172,25 +176,25 @@
 
       <section id="rhythm" class="section rhythm">
         <div class="section-heading reveal">
-          <p class="eyebrow">Reading plans</p>
-          <h2>Short paths for starting, restarting, and staying consistent.</h2>
+          <p class="eyebrow">Verse generator</p>
+          <h2>Four simple ways to pull a verse when you need one.</h2>
         </div>
 
         <div class="timeline">
           <article class="timeline-card reveal">
-            <span class="timeline-time">Day 1</span>
-            <h3>Start in John</h3>
-            <p>Open John 1 and begin with a clear starting point instead of guessing where to read.</p>
+            <span class="timeline-time">Mode 1</span>
+            <h3>By topic</h3>
+            <p>Generate verses around peace, hope, wisdom, love, or whatever theme you need to sit with.</p>
           </article>
           <article class="timeline-card reveal">
-            <span class="timeline-time">Day 2</span>
-            <h3>Psalms for peace</h3>
-            <p>Use a short plan when you want scripture for anxiety, steadiness, and prayer.</p>
+            <span class="timeline-time">Mode 2</span>
+            <h3>By testament</h3>
+            <p>Stay inside either the Old Testament or New Testament when you want a narrower result.</p>
           </article>
           <article class="timeline-card reveal">
-            <span class="timeline-time">Day 3</span>
-            <h3>Romans foundation</h3>
-            <p>Move into grace, identity, and renewal with a stronger sense of sequence.</p>
+            <span class="timeline-time">Mode 3</span>
+            <h3>By book or chapter</h3>
+            <p>Generate directly from the book or chapter you are already browsing so the tool stays coherent.</p>
           </article>
         </div>
       </section>
@@ -201,7 +205,7 @@
           <h2>Member accounts are part of the product, not just the design.</h2>
           <p>
             New users can create an account, come back later, and keep reading progress, saved verses,
-            study notes, reflection, and AI history in one place.
+            study notes, generated verse picks, and AI history in one place.
           </p>
         </div>
 
@@ -210,7 +214,7 @@
             <p class="eyebrow">Live state</p>
             <h3 id="account-heading">Create your Selah account</h3>
             <p id="account-copy">
-              Sign up to unlock the calmer member library. Your books, saved verses, plans, and
+              Sign up to unlock the calmer member browser. Your books, saved verses, generated verses, and
               guided AI runs can all attach to one account.
             </p>
             <p class="status-message is-neutral" id="account-status-message" aria-live="polite">
@@ -243,7 +247,7 @@
               <li>Bcrypt password hashing</li>
               <li>Welcome email on new account creation</li>
               <li>Welcome email resend for existing members</li>
-              <li>Books, reading plans, saved verses, and server-powered AI guidance</li>
+              <li>Books, verse generation, saved verses, and server-powered AI guidance</li>
             </ul>
           </article>
         </div>
@@ -253,7 +257,7 @@
         <div class="showcase-panel reveal">
           <div class="showcase-copy">
             <p class="eyebrow">Product direction</p>
-            <h2>This now feels like a Bible destination, not a generic app shell.</h2>
+              <h2>This now feels like a focused Bible tool, not a generic app shell.</h2>
             <p>
               It feels modern enough to be credible, but warm enough to feel spiritually grounded.
               That matters when the product needs to support daily reading, not just a one-time demo.
@@ -261,7 +265,7 @@
           </div>
           <div class="showcase-list" aria-label="Core modules">
             <span>Book explorer</span>
-            <span>Reading plans</span>
+            <span>Verse generator</span>
             <span>Saved verse library</span>
             <span>Study notes</span>
             <span>Member accounts</span>

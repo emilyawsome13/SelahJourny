@@ -16,7 +16,9 @@ const {
   getChapter,
   getVerseOfDay,
   getTopicCollections,
-  getReadingPlans
+  getReadingPlans,
+  getGeneratorPresets,
+  generateVerse
 } = require("./bible-service");
 
 dotenv.config({ quiet: true });
@@ -1768,6 +1770,7 @@ function createApp(options = {}) {
         books: getBooks(),
         topics: getTopicCollections(),
         plans: getReadingPlans(),
+        generator: getGeneratorPresets(),
         readingPosition: {
           ...DEFAULT_USER_SETTINGS.readingPosition,
           ...(user.settings?.readingPosition || {})
@@ -1802,6 +1805,40 @@ function createApp(options = {}) {
           bookId,
           chapterNumber: chapter
         })
+      });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.post("/api/bible/generate", async (request, response, next) => {
+    try {
+      const { user } = await findSessionUser(request);
+
+      if (!user) {
+        response.status(401).json({ message: "Please log in to generate a verse." });
+        return;
+      }
+
+      const rawMode = String(request.body.mode || "random").trim().toLowerCase();
+      const bookId = request.body.bookId ? normalizeBookId(request.body.bookId) : "";
+      const chapter = request.body.chapter ? normalizeChapter(request.body.chapter, 1) : null;
+      const testament = String(request.body.testament || "all").trim().toLowerCase();
+      const topic = String(request.body.topic || "").trim();
+      const offset = Math.max(0, Number(request.body.offset || 0));
+
+      const result = generateVerse({
+        mode: rawMode,
+        topic,
+        testament,
+        bookId,
+        chapter,
+        offset
+      });
+
+      response.json({
+        message: "Verse generated.",
+        result
       });
     } catch (error) {
       next(error);

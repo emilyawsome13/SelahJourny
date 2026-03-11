@@ -136,10 +136,10 @@ function getMemberStatus(user) {
 function updateGuestView(message = "No one is signed in yet.", tone = "neutral") {
   accountHeading.textContent = "Create your Selah account";
   accountCopy.textContent =
-    "Sign up to unlock the calmer Bible library. This is where books, verses, notes, plans, and guided history can persist.";
+    "Sign up to unlock the Bible browser. This is where books, generated verses, notes, and guided history can persist.";
   previewTitle.textContent = "Member library included";
   previewCopy.textContent =
-    "Create an account to keep your verse library, study notes, reading plans, and AI guidance in one place.";
+    "Create an account to keep your verse library, study notes, generated verses, and AI guidance in one place.";
 
   guestActions.hidden = false;
   memberActions.hidden = true;
@@ -161,10 +161,10 @@ function updateMemberView(user, message, tone) {
 
   accountHeading.textContent = `Welcome, ${user.name}`;
   accountCopy.textContent =
-    "Your account is active. This is where your Bible library, saved verses, study notes, plans, and guided history now live.";
+    "Your account is active. This is where your Bible browser, saved verses, study notes, generated verses, and guided history now live.";
   previewTitle.textContent = "Your library is live";
   previewCopy.textContent =
-    "Sessions are working and your verse library, study notes, reading plans, and AI guidance can stay attached to a real member account.";
+    "Sessions are working and your verse library, study notes, generated verses, and AI guidance can stay attached to a real member account.";
 
   guestActions.hidden = true;
   memberActions.hidden = false;

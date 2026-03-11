@@ -120,12 +120,12 @@ async function main() {
 
     assert.equal(appResponse.status, 200);
     const appHtml = await appResponse.text();
-    assert.ok(appHtml.includes("Bible Library"));
-    assert.ok(appHtml.includes("Continue reading"));
-    assert.ok(appHtml.includes("Open This Book"));
-    assert.ok(appHtml.includes("Plans"));
+    assert.ok(appHtml.includes("Bible Browser"));
+    assert.ok(appHtml.includes("Verse Generator"));
+    assert.ok(appHtml.includes("Continue Reading"));
+    assert.ok(appHtml.includes("Generate Verse"));
     assert.ok(appHtml.includes("Your verse library"));
-    assert.ok(appHtml.includes("Shape your library"));
+    assert.ok(appHtml.includes("Your account"));
 
     const sessionResponse = await fetch(`${baseUrl}/api/session`, {
       headers: {
@@ -163,6 +163,27 @@ async function main() {
     assert.equal(bibleBootstrapData.readingPosition.bookId, "JHN");
     assert.equal(bibleBootstrapData.topics.length >= 3, true);
     assert.equal(bibleBootstrapData.plans.length >= 3, true);
+    assert.equal(Array.isArray(bibleBootstrapData.generator.modes), true);
+    assert.equal(bibleBootstrapData.generator.modes.length >= 4, true);
+
+    const generatedVerseResponse = await fetch(`${baseUrl}/api/bible/generate`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Cookie: cookie
+      },
+      body: JSON.stringify({
+        mode: "topic",
+        topic: "peace",
+        offset: 0
+      })
+    });
+
+    assert.equal(generatedVerseResponse.status, 200);
+    const generatedVerseData = await generatedVerseResponse.json();
+    assert.equal(generatedVerseData.result.mode, "topic");
+    assert.ok(generatedVerseData.result.reference);
+    assert.ok(generatedVerseData.result.text);
 
     const chapterResponse = await fetch(`${baseUrl}/api/bible/chapter?translationId=BSB&bookId=JHN&chapter=1`, {
       headers: {

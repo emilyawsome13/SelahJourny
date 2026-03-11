@@ -3,29 +3,28 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Selah | Bible Verse Library</title>
+  <title>Selah | Bible Browser and Verse Generator</title>
   <meta
     name="description"
-    content="Selah is a Bible verse website with books, chapter reading, reading plans, saved scriptures, notes, prayer reflection, and grounded AI guidance."
+    content="Selah is a Bible browser and verse generator with chapter reading, saved verses, study notes, and account access."
   >
   <link rel="stylesheet" href="styles.css">
 </head>
 <body class="dashboard-body">
   <div class="page-shell workspace-shell">
     <header class="site-header workspace-header">
-      <a class="brand" href="/app" aria-label="Selah Bible library">
+      <a class="brand" href="/app" aria-label="Selah Bible browser">
         <span class="brand-mark">S</span>
         <span class="brand-copy">
           <strong>Selah</strong>
-          <span>Bible Library</span>
+          <span>Bible Browser</span>
         </span>
       </a>
 
-      <nav class="site-nav workspace-nav" aria-label="Bible library sections">
-        <a href="#today">Overview</a>
-        <a href="#books">Books</a>
-        <a href="#plans">Plans</a>
-        <a href="#study">Study</a>
+      <nav class="site-nav workspace-nav" aria-label="Selah sections">
+        <a href="#overview">Overview</a>
+        <a href="#browser">Browser</a>
+        <a href="#generator">Generator</a>
         <a href="#library">Library</a>
         <a href="#account">Account</a>
       </nav>
@@ -45,23 +44,31 @@
     </header>
 
     <main class="dashboard-main">
-      <section class="workspace-hero section" id="today">
-        <div class="card workspace-hero-panel">
-          <p class="eyebrow">Scripture-first library</p>
-          <h1 id="dashboard-greeting">Loading your Bible library...</h1>
+      <section class="workspace-hero section" id="overview">
+        <div class="card workspace-hero-panel browser-hero-panel">
+          <p class="eyebrow">Bible browser and verse generator</p>
+          <h1 id="dashboard-greeting">Loading your Bible browser...</h1>
           <p class="hero-text">
-            Selah now works like a Bible destination first: books, chapters, reading plans, saved verses,
-            study notes, and personal reflection all stay together in one calm member space.
+            Selah now focuses on two things: browsing scripture clearly and generating useful verses
+            without all the extra concept layers that were getting in the way.
           </p>
           <div class="hero-actions">
-            <a class="button button-primary" href="#books">Open books</a>
-            <a class="button button-secondary" href="#plans">Start a plan</a>
+            <a class="button button-primary" href="#browser">Open browser</a>
+            <a class="button button-secondary" href="#generator">Open generator</a>
           </div>
           <p class="status-message is-neutral" id="dashboard-status" aria-live="polite">
-            Loading your library...
+            Loading your Bible browser...
           </p>
 
           <div class="hero-stat-grid">
+            <article class="stat-card">
+              <span class="stat-label">Books</span>
+              <div class="stat-value" id="stat-books">66</div>
+            </article>
+            <article class="stat-card">
+              <span class="stat-label">Topics</span>
+              <div class="stat-value" id="stat-topics">0</div>
+            </article>
             <article class="stat-card">
               <span class="stat-label">Saved verses</span>
               <div class="stat-value" id="stat-saved-verses">0</div>
@@ -71,40 +78,41 @@
               <div class="stat-value" id="stat-study-notes">0</div>
             </article>
             <article class="stat-card">
-              <span class="stat-label">Prayer notes</span>
-              <div class="stat-value" id="stat-prayers">0</div>
-            </article>
-            <article class="stat-card">
-              <span class="stat-label">AI guides</span>
-              <div class="stat-value" id="stat-ai-guides">0</div>
-            </article>
-            <article class="stat-card">
-              <span class="stat-label">Active prayers</span>
-              <div class="stat-value" id="stat-active-prayers">0</div>
+              <span class="stat-label">Current book</span>
+              <div class="stat-value stat-value-text" id="stat-current-book">John</div>
             </article>
           </div>
         </div>
 
-        <aside class="card workspace-side-panel">
-          <div>
-            <p class="card-label">Verse of the day</p>
-            <h2 id="verse-of-day-reference">Loading...</h2>
-            <p class="dashboard-card-copy" id="verse-of-day-text">
-              Today&apos;s verse will appear here.
-            </p>
-            <p class="inline-note" id="verse-of-day-translation"></p>
+        <aside class="card workspace-side-panel quick-verse-card">
+          <div class="panel-heading">
+            <div>
+              <p class="card-label">Quick verse</p>
+              <h2 id="quick-verse-reference">Loading verse...</h2>
+            </div>
+            <span class="panel-pill" id="quick-verse-badge">Verse of the day</span>
           </div>
-
-          <article class="cta-card">
-            <p class="card-label">Continue reading</p>
-            <h3 id="continue-reading-reference">Loading your place...</h3>
-            <p class="dashboard-card-copy" id="continue-reading-copy">
-              Your saved reading position will appear here.
-            </p>
-            <button class="button button-secondary" id="continue-reading-button" type="button">
-              Open Chapter
+          <p class="dashboard-card-copy quick-verse-text" id="quick-verse-text">
+            A generated verse will appear here.
+          </p>
+          <p class="inline-note" id="quick-verse-meta"></p>
+          <p class="dashboard-card-copy" id="quick-verse-reason">
+            This area gives you a quick starting verse before you browse or generate your own.
+          </p>
+          <div class="action-cluster">
+            <button class="button button-primary" id="quick-verse-save" type="button">
+              Save Verse
             </button>
-          </article>
+            <button class="button button-secondary" id="quick-verse-open" type="button">
+              Open In Browser
+            </button>
+            <button class="button button-ghost" id="quick-verse-note" type="button">
+              Use In Note
+            </button>
+            <button class="button button-ghost" id="quick-generate-another" type="button">
+              Generate Another
+            </button>
+          </div>
 
           <div class="meta-list">
             <div class="meta-row">
@@ -112,414 +120,252 @@
               <strong id="member-email-value">member@example.com</strong>
             </div>
             <div class="meta-row">
-              <span>Focus</span>
-              <strong id="member-focus-value">Presence over performance</strong>
-            </div>
-            <div class="meta-row">
               <span>Member since</span>
               <strong id="member-since-value">Recently</strong>
             </div>
             <div class="meta-row">
-              <span>Reminder</span>
-              <strong id="member-reminder-value">7:30 AM</strong>
-            </div>
-            <div class="meta-row">
-              <span>AI voice</span>
-              <strong id="member-voice-value">Grounded</strong>
+              <span>Current place</span>
+              <strong id="continue-reading-reference">John 1</strong>
             </div>
           </div>
+
+          <p class="dashboard-card-copy" id="continue-reading-copy">
+            Your saved reading position will appear here.
+          </p>
+          <button class="button button-secondary" id="continue-reading-button" type="button">
+            Continue Reading
+          </button>
         </aside>
       </section>
 
-      <section class="section" id="books">
+      <section class="section" id="browser">
         <div class="section-heading">
           <div>
-            <h2>Books</h2>
-            <p>Move through the Bible by book, filter the canon, and read chapter by chapter in one place.</p>
+            <h2>Browser</h2>
+            <p>Choose a translation, browse books, load a chapter, and pick the verse you want to keep.</p>
           </div>
         </div>
 
-        <article class="card panel scripture-panel">
-          <div class="reader-toolbar reader-toolbar-wide">
+        <article class="card panel browser-panel">
+          <div class="browser-control-grid">
             <label class="form-field">
               <span>Translation</span>
-              <select id="reader-translation" class="form-select"></select>
+              <select id="browser-translation" class="form-select"></select>
+            </label>
+
+            <label class="form-field">
+              <span>Book</span>
+              <select id="browser-book" class="form-select"></select>
             </label>
 
             <label class="form-field">
               <span>Chapter</span>
-              <input id="reader-chapter" type="number" min="1" value="1">
+              <input id="browser-chapter" type="number" min="1" value="1">
             </label>
 
             <label class="form-field">
               <span>Search books</span>
-              <input id="book-search" type="search" placeholder="Search Genesis, John, Romans...">
+              <input id="browser-search" type="search" placeholder="Search Genesis, John, Romans...">
             </label>
 
             <div class="reader-toolbar-actions">
-              <button class="button button-primary" id="reader-load-button" type="button">
+              <button class="button button-primary" id="browser-load-button" type="button">
                 Load Chapter
               </button>
-              <button class="button button-secondary" id="save-reading-position" type="button">
-                Save Reading Position
+              <button class="button button-secondary" id="browser-save-position" type="button">
+                Save Position
               </button>
             </div>
           </div>
 
-          <div class="book-filter-layout">
-            <div class="testament-filter-row" role="tablist" aria-label="Book groups">
-              <button class="mode-pill is-active" type="button" data-testament-filter="all">All</button>
-              <button class="mode-pill" type="button" data-testament-filter="old">Old Testament</button>
-              <button class="mode-pill" type="button" data-testament-filter="new">New Testament</button>
-            </div>
+          <p class="status-message is-neutral" id="browser-status" aria-live="polite">
+            Choose a book and chapter to begin.
+          </p>
 
-            <label class="form-field compact-field">
-              <span>Collection</span>
-              <select id="book-group-filter" class="form-select"></select>
-            </label>
-          </div>
-
-          <p class="inline-note" id="book-count-copy">Loading books...</p>
-
-          <div class="workspace-two-column book-explorer-layout">
-            <article class="reader-column">
-              <div class="book-grid" id="book-grid" aria-live="polite"></div>
-            </article>
-
-            <aside class="card panel book-spotlight-panel">
-              <p class="card-label">Book spotlight</p>
-              <h3 id="book-spotlight-name">John</h3>
-              <p class="dashboard-card-copy" id="book-spotlight-meta">
-                New Testament - Gospels - 21 chapters
-              </p>
-              <p class="dashboard-card-copy" id="book-spotlight-summary">
-                Select a book to see its shape, its place in Scripture, and quick chapter jumps.
-              </p>
-              <p class="inline-note" id="book-spotlight-reference">Current place: John 1</p>
-              <div class="chapter-heading-list" id="book-chapter-jump"></div>
-              <button class="button button-primary" id="book-spotlight-open" type="button">
-                Open This Book
-              </button>
-            </aside>
-          </div>
-
-          <div class="workspace-two-column reader-layout">
+          <div class="workspace-two-column browser-layout">
             <article class="reader-column">
               <div class="panel-heading">
                 <div>
-                  <p class="eyebrow">Current chapter</p>
+                  <p class="card-label">Books</p>
+                  <h2>Book browser</h2>
+                </div>
+                <span class="panel-pill" id="browser-book-count">Loading books</span>
+              </div>
+              <div class="book-grid" id="browser-book-list" aria-live="polite"></div>
+            </article>
+
+            <article class="reader-column">
+              <div class="panel-heading">
+                <div>
+                  <p class="card-label">Current chapter</p>
                   <h2 id="reader-heading">John 1</h2>
                 </div>
                 <span class="panel-pill" id="reader-source-pill">Preparing chapter</span>
               </div>
               <p class="dashboard-card-copy" id="reader-meta">Translation: BSB</p>
-              <p class="status-message is-neutral" id="reader-status" aria-live="polite">
-                Choose a book and chapter to begin.
-              </p>
               <div class="chapter-heading-list" id="chapter-heading-list"></div>
               <div class="verse-list" id="chapter-verse-list"></div>
             </article>
+          </div>
 
-            <article class="reader-column selected-verse-panel">
+          <div class="workspace-two-column browser-lower-layout">
+            <article class="card panel selected-verse-panel">
               <div class="panel-heading">
                 <div>
-                  <p class="eyebrow">Selected verse</p>
+                  <p class="card-label">Selected verse</p>
                   <h2 id="selected-verse-reference">Choose a verse</h2>
                 </div>
               </div>
               <p class="dashboard-card-copy" id="selected-verse-text">
-                Click a verse in the reader to save it, study it, or send it into the AI guide.
+                Click a verse in the browser to use it in your note, save it, or generate from that chapter.
               </p>
-              <div class="reader-toolbar-actions">
+              <div class="action-cluster">
                 <button class="button button-primary" id="save-selected-verse" type="button">
                   Save Verse
                 </button>
-                <button class="button button-secondary" id="send-selected-to-ai" type="button">
-                  Send To AI Guide
+                <button class="button button-secondary" id="generate-from-selection" type="button">
+                  Generate From Chapter
+                </button>
+                <button class="button button-ghost" id="selected-verse-to-note" type="button">
+                  Use In Note
                 </button>
               </div>
+            </article>
+
+            <article class="card panel">
+              <div class="panel-heading">
+                <div>
+                  <p class="card-label">Verse note</p>
+                  <h2>Keep the useful part</h2>
+                </div>
+              </div>
+
+              <form class="stack-form" id="study-note-form">
+                <label class="form-field">
+                  <span>Note title</span>
+                  <input id="study-note-title" name="title" type="text" maxlength="100" placeholder="Why this verse matters right now" required>
+                </label>
+
+                <label class="form-field">
+                  <span>Reference</span>
+                  <input id="study-note-reference" name="reference" type="text" maxlength="80" placeholder="John 1:1">
+                </label>
+
+                <label class="form-field">
+                  <span>Verse text</span>
+                  <textarea id="study-note-verse-text" name="verseText" rows="3" maxlength="500" placeholder="Selected or generated verse text will appear here."></textarea>
+                </label>
+
+                <label class="form-field">
+                  <span>Note body</span>
+                  <textarea id="study-note-body" name="body" rows="5" maxlength="1600" placeholder="Write the observation, reminder, or summary you want to keep." required></textarea>
+                </label>
+
+                <input id="study-note-translation-id" name="translationId" type="hidden">
+                <input id="study-note-book-id" name="bookId" type="hidden">
+                <input id="study-note-chapter" name="chapter" type="hidden">
+                <input id="study-note-verse" name="verse" type="hidden">
+
+                <button class="button button-primary" type="submit">Save Note</button>
+              </form>
+
+              <p class="status-message is-neutral" id="study-note-status" aria-live="polite">
+                Select a verse from the browser or generator first if you want to anchor this note.
+              </p>
             </article>
           </div>
         </article>
       </section>
 
-      <section class="section" id="study">
+      <section class="section" id="generator">
         <div class="section-heading">
           <div>
-            <h2>Study</h2>
-            <p>Use topic collections, write notes, and get help from the AI guide when needed.</p>
+            <h2>Verse Generator</h2>
+            <p>Generate a verse by topic, testament, book, or the chapter you are already browsing.</p>
           </div>
         </div>
 
-        <div class="workspace-two-column">
+        <div class="workspace-two-column generator-layout">
           <article class="card panel">
             <div class="panel-heading">
               <div>
-                <p class="eyebrow">Topic collections</p>
-                <h2>Start from a theme</h2>
+                <p class="card-label">Generate</p>
+                <h2>Choose how to pull a verse</h2>
               </div>
-            </div>
-            <div class="topic-collection-list" id="topic-collection-list"></div>
-          </article>
-
-          <article class="card panel">
-            <div class="panel-heading">
-              <div>
-                <p class="eyebrow">Study note</p>
-                <h2>Write what stands out</h2>
-              </div>
+              <span class="panel-pill" id="generator-mode-label">Random verse</span>
             </div>
 
-            <form class="stack-form" id="study-note-form">
+            <div class="mode-pill-row" role="tablist" aria-label="Generator modes">
+              <button class="mode-pill is-active" type="button" data-generator-mode="random">Random</button>
+              <button class="mode-pill" type="button" data-generator-mode="daily">Daily</button>
+              <button class="mode-pill" type="button" data-generator-mode="topic">Topic</button>
+              <button class="mode-pill" type="button" data-generator-mode="testament">Testament</button>
+              <button class="mode-pill" type="button" data-generator-mode="book">Book</button>
+              <button class="mode-pill" type="button" data-generator-mode="chapter">Chapter</button>
+            </div>
+
+            <div class="generator-topic-list" id="generator-topic-list"></div>
+
+            <form class="stack-form" id="generator-form">
               <label class="form-field">
-                <span>Note title</span>
-                <input id="study-note-title" name="title" type="text" maxlength="100" placeholder="Why this verse matters today" required>
+                <span>Topic</span>
+                <input id="generator-topic" name="topic" type="text" maxlength="80" placeholder="peace, hope, wisdom, strength">
               </label>
 
               <label class="form-field">
-                <span>Reference</span>
-                <input id="study-note-reference" name="reference" type="text" maxlength="80" placeholder="John 1:1">
-              </label>
-
-              <label class="form-field">
-                <span>Verse text</span>
-                <textarea id="study-note-verse-text" name="verseText" rows="3" maxlength="500" placeholder="Selected verse text will appear here."></textarea>
-              </label>
-
-              <label class="form-field">
-                <span>Note body</span>
-                <textarea id="study-note-body" name="body" rows="6" maxlength="1600" placeholder="Write the insight, question, or observation you want to keep." required></textarea>
-              </label>
-
-              <input id="study-note-translation-id" name="translationId" type="hidden">
-              <input id="study-note-book-id" name="bookId" type="hidden">
-              <input id="study-note-chapter" name="chapter" type="hidden">
-              <input id="study-note-verse" name="verse" type="hidden">
-
-              <button class="button button-primary" type="submit">Save Study Note</button>
-            </form>
-
-            <p class="status-message is-neutral" id="study-note-status" aria-live="polite">
-              Select a verse first if you want to anchor the note to a passage.
-            </p>
-          </article>
-        </div>
-
-        <div class="workspace-two-column study-ai-layout">
-          <article class="card panel studio-panel">
-            <div class="panel-heading">
-              <div>
-                <p class="eyebrow">AI guide</p>
-                <h2>Use scripture-aware help</h2>
-              </div>
-              <span class="panel-pill" id="studio-source-pill">Mode ready</span>
-            </div>
-
-            <div class="mode-pill-row" role="tablist" aria-label="AI guide modes">
-              <button class="mode-pill is-active" type="button" data-ai-mode="companion">Companion</button>
-              <button class="mode-pill" type="button" data-ai-mode="reframe">Reframe</button>
-              <button class="mode-pill" type="button" data-ai-mode="plan">Plan</button>
-              <button class="mode-pill" type="button" data-ai-mode="scripture">Scripture</button>
-              <button class="mode-pill" type="button" data-ai-mode="experiment">Experiment</button>
-            </div>
-
-            <div class="prompt-chip-row">
-              <button class="prompt-chip" type="button" data-ai-seed="Help me understand how this passage speaks to what I am carrying today.">
-                Understand passage
-              </button>
-              <button class="prompt-chip" type="button" data-ai-seed="Turn this passage into a prayer I can actually use today.">
-                Pray this passage
-              </button>
-              <button class="prompt-chip" type="button" data-ai-seed="Give me a practical next step from what I just read.">
-                Next step
-              </button>
-            </div>
-
-            <form class="studio-form" id="ai-studio-form">
-              <label class="form-field">
-                <span>Prompt</span>
-                <textarea
-                  id="ai-prompt"
-                  name="prompt"
-                  rows="6"
-                  maxlength="1000"
-                  placeholder="Ask Selah for help with the passage, with your notes, or with something you are carrying."
-                  required
-                ></textarea>
-              </label>
-              <button class="button button-primary" type="submit">Run AI Guide</button>
-            </form>
-          </article>
-
-          <article class="card panel studio-output-panel">
-            <div class="panel-heading">
-              <div>
-                <p class="eyebrow">Guide output</p>
-                <h2 id="studio-title">Waiting for your first prompt</h2>
-              </div>
-              <span class="panel-pill" id="studio-mode-label">Companion mode</span>
-            </div>
-
-            <div class="studio-result" id="studio-result">
-              <p class="studio-summary" id="studio-summary">
-                Selah can help you understand a passage, reframe pressure, build a reading plan, or turn scripture into prayer.
-              </p>
-
-              <article class="studio-block">
-                <p class="card-label">Read</p>
-                <p class="studio-copy" id="studio-response-copy"></p>
-              </article>
-
-              <div class="studio-grid">
-                <article class="studio-block">
-                  <p class="card-label">Prayer</p>
-                  <p class="studio-copy" id="studio-prayer-copy"></p>
-                </article>
-                <article class="studio-block">
-                  <p class="card-label">Scripture</p>
-                  <p class="studio-copy" id="studio-scripture-copy"></p>
-                </article>
-              </div>
-
-              <div class="studio-grid">
-                <article class="studio-block">
-                  <p class="card-label">Actions</p>
-                  <ul class="studio-list" id="studio-action-list"></ul>
-                </article>
-                <article class="studio-block">
-                  <p class="card-label">Follow-up</p>
-                  <ul class="studio-list" id="studio-follow-up-list"></ul>
-                </article>
-              </div>
-            </div>
-
-            <div class="session-log-panel">
-              <div class="panel-heading panel-heading-tight">
-                <div>
-                  <p class="eyebrow">Recent AI guides</p>
-                  <h3>Saved prompts</h3>
-                </div>
-              </div>
-              <div class="studio-log" id="studio-log" aria-live="polite"></div>
-            </div>
-          </article>
-        </div>
-      </section>
-
-      <section class="section" id="plans">
-        <div class="section-heading">
-          <div>
-            <h2>Plans</h2>
-            <p>Start from a clear path when you want structure, momentum, or a place to begin again.</p>
-          </div>
-        </div>
-
-        <div class="plan-grid" id="reading-plan-list" aria-live="polite"></div>
-        <p class="status-message is-neutral" id="plan-status" aria-live="polite">
-          Choose a plan and Selah will open its next reading in the books section.
-        </p>
-      </section>
-
-      <section class="section" id="reflect">
-        <div class="section-heading">
-          <div>
-            <h2>Reflect</h2>
-            <p>Keep prayer and response close to the scripture you are reading instead of in a separate app.</p>
-          </div>
-        </div>
-
-        <div class="workspace-two-column">
-          <article class="card panel composer-panel">
-            <p class="eyebrow">Prayer entry</p>
-            <h2>Write today&apos;s prayer</h2>
-            <form class="journal-form" id="prayer-form">
-              <label class="form-field">
-                <span>Prayer title</span>
-                <input type="text" name="title" maxlength="80" placeholder="Pray for wisdom this week" required>
-              </label>
-
-              <label class="form-field">
-                <span>Category</span>
-                <select name="category" class="form-select">
-                  <option value="general">General</option>
-                  <option value="family">Family</option>
-                  <option value="gratitude">Gratitude</option>
-                  <option value="guidance">Guidance</option>
-                  <option value="health">Health</option>
-                  <option value="church">Church</option>
-                  <option value="work">Work</option>
+                <span>Testament</span>
+                <select id="generator-testament" name="testament" class="form-select">
+                  <option value="all">Whole Bible</option>
+                  <option value="old">Old Testament</option>
+                  <option value="new">New Testament</option>
                 </select>
               </label>
 
               <label class="form-field">
-                <span>Prayer details</span>
-                <textarea
-                  name="body"
-                  rows="6"
-                  maxlength="1500"
-                  placeholder="Write the prayer you want to remember and revisit."
-                  required
-                ></textarea>
+                <span>Book focus</span>
+                <select id="generator-book" name="bookId" class="form-select"></select>
               </label>
 
-              <button class="button button-primary" type="submit">Save Prayer</button>
+              <button class="button button-primary" id="generate-verse-button" type="submit">
+                Generate Verse
+              </button>
             </form>
-            <p class="status-message is-neutral" id="prayer-form-status" aria-live="polite">
-              Your prayer notes stay private to this account.
+
+            <p class="status-message is-neutral" id="generator-status" aria-live="polite">
+              Pick a mode and generate a verse.
             </p>
           </article>
 
-          <article class="card panel filter-panel">
-            <p class="eyebrow">Prayer filter</p>
-            <h2>Search your journal</h2>
-            <div class="filter-stack">
-              <label class="form-field">
-                <span>Search entries</span>
-                <input type="search" id="prayer-search" placeholder="Search titles, details, or answered notes">
-              </label>
-
-              <label class="form-field">
-                <span>Category</span>
-                <select id="prayer-category-filter" class="form-select">
-                  <option value="all">All categories</option>
-                  <option value="general">General</option>
-                  <option value="family">Family</option>
-                  <option value="gratitude">Gratitude</option>
-                  <option value="guidance">Guidance</option>
-                  <option value="health">Health</option>
-                  <option value="church">Church</option>
-                  <option value="work">Work</option>
-                </select>
-              </label>
+          <article class="card panel generator-output-panel">
+            <div class="panel-heading">
+              <div>
+                <p class="card-label">Generated verse</p>
+                <h2 id="generated-verse-reference">Waiting for a verse</h2>
+              </div>
+              <span class="panel-pill" id="generated-verse-badge">Curated</span>
             </div>
 
-            <p class="filter-result-copy" id="filter-result-copy">
-              Showing every prayer in your journal.
+            <p class="generator-output-text" id="generated-verse-text">
+              A generated verse will appear here.
             </p>
-          </article>
-        </div>
-
-        <div class="prayer-columns">
-          <article class="card panel prayer-panel">
-            <div class="panel-heading">
-              <div>
-                <p class="eyebrow">Open prayers</p>
-                <h2>Still active</h2>
-              </div>
-              <span class="panel-count" id="active-prayer-count">0</span>
+            <p class="inline-note" id="generated-verse-meta"></p>
+            <p class="dashboard-card-copy" id="generated-verse-reason">
+              Selah will tell you why this verse was picked so the generator feels useful, not random for no reason.
+            </p>
+            <div class="action-cluster">
+              <button class="button button-primary" id="generated-verse-save" type="button">
+                Save Verse
+              </button>
+              <button class="button button-secondary" id="generated-verse-open" type="button">
+                Open In Browser
+              </button>
+              <button class="button button-ghost" id="generated-verse-note" type="button">
+                Use In Note
+              </button>
+              <button class="button button-ghost" id="generated-verse-refresh" type="button">
+                Generate Another
+              </button>
             </div>
-            <div class="prayer-list" id="active-prayer-list" aria-live="polite"></div>
-          </article>
-
-          <article class="card panel prayer-panel">
-            <div class="panel-heading">
-              <div>
-                <p class="eyebrow">Answered archive</p>
-                <h2>Evidence board</h2>
-              </div>
-              <span class="panel-count" id="answered-prayer-count">0</span>
-            </div>
-            <div class="prayer-list" id="answered-prayer-list" aria-live="polite"></div>
           </article>
         </div>
       </section>
@@ -528,7 +374,7 @@
         <div class="section-heading">
           <div>
             <h2>Library</h2>
-            <p>Return to saved verses and study notes without losing the thread.</p>
+            <p>Saved verses and study notes stay secondary, but easy to reopen and use again.</p>
           </div>
         </div>
 
@@ -536,7 +382,7 @@
           <article class="card panel">
             <div class="panel-heading">
               <div>
-                <p class="eyebrow">Saved verses</p>
+                <p class="card-label">Saved verses</p>
                 <h2>Your verse library</h2>
               </div>
             </div>
@@ -546,7 +392,7 @@
           <article class="card panel">
             <div class="panel-heading">
               <div>
-                <p class="eyebrow">Study notes</p>
+                <p class="card-label">Study notes</p>
                 <h2>Your note library</h2>
               </div>
             </div>
@@ -559,16 +405,16 @@
         <div class="section-heading">
           <div>
             <h2>Account</h2>
-            <p>Keep your profile, AI preferences, and security settings in one place.</p>
+            <p>Keep the basic profile and password tools here without turning the whole product into settings screens.</p>
           </div>
         </div>
 
-        <div class="account-grid">
+        <div class="workspace-two-column">
           <article class="card panel account-panel">
             <div class="panel-heading">
               <div>
-                <p class="eyebrow">Profile</p>
-                <h2>Shape your library</h2>
+                <p class="card-label">Profile</p>
+                <h2>Your account</h2>
               </div>
             </div>
 
@@ -594,85 +440,32 @@
               </label>
 
               <label class="form-field">
-                <span>Spiritual focus</span>
-                <input id="profile-focus" name="focus" type="text" maxlength="80" placeholder="Presence over performance">
+                <span>Reading focus</span>
+                <input id="profile-focus" name="focus" type="text" maxlength="80" placeholder="Peace, wisdom, grace, consistency">
               </label>
 
               <label class="form-field">
                 <span>Current season</span>
-                <input id="profile-season" name="currentSeason" type="text" maxlength="80" placeholder="Studying through John this month">
+                <input id="profile-season" name="currentSeason" type="text" maxlength="80" placeholder="Reading through John this month">
               </label>
 
               <label class="form-field">
-                <span>Member note</span>
-                <textarea id="profile-bio" name="bio" rows="4" maxlength="280" placeholder="A short note about what Selah should keep in view for you."></textarea>
+                <span>Profile note</span>
+                <textarea id="profile-bio" name="bio" rows="4" maxlength="280" placeholder="A short note about what you want Selah to keep in view."></textarea>
               </label>
 
               <button class="button button-primary" type="submit">Save Profile</button>
             </form>
 
             <p class="status-message is-neutral" id="profile-form-status" aria-live="polite">
-              Your profile shapes how Selah frames the library.
-            </p>
-          </article>
-
-          <article class="card panel account-panel">
-            <div class="panel-heading">
-              <div>
-                <p class="eyebrow">AI settings</p>
-                <h2>Tune the guide</h2>
-              </div>
-            </div>
-
-            <form class="stack-form" id="settings-form">
-              <label class="form-field">
-                <span>Default guide mode</span>
-                <select id="settings-default-mode" name="defaultAiMode" class="form-select">
-                  <option value="companion">Companion</option>
-                  <option value="reframe">Reframe</option>
-                  <option value="plan">Plan</option>
-                  <option value="scripture">Scripture</option>
-                  <option value="experiment">Experiment</option>
-                </select>
-              </label>
-
-              <label class="form-field">
-                <span>AI voice</span>
-                <select id="settings-ai-voice" name="aiVoice" class="form-select">
-                  <option value="grounded">Grounded</option>
-                  <option value="gentle">Gentle</option>
-                  <option value="courageous">Courageous</option>
-                  <option value="poetic">Poetic</option>
-                </select>
-              </label>
-
-              <label class="form-field">
-                <span>Daily reminder time</span>
-                <input id="settings-reminder-time" name="reminderTime" type="time">
-              </label>
-
-              <label class="toggle-field">
-                <input id="settings-weekly-digest" name="weeklyDigest" type="checkbox">
-                <span>Enable weekly digest reminders</span>
-              </label>
-
-              <label class="toggle-field">
-                <input id="settings-experimental-layout" name="experimentalLayout" type="checkbox">
-                <span>Keep the expanded library layout enabled</span>
-              </label>
-
-              <button class="button button-primary" type="submit">Save Settings</button>
-            </form>
-
-            <p class="status-message is-neutral" id="settings-form-status" aria-live="polite">
-              These settings shape the tone and structure of your library.
+              Update the basic account details that shape your browser and generator experience.
             </p>
           </article>
 
           <article class="card panel account-panel security-panel">
             <div class="panel-heading">
               <div>
-                <p class="eyebrow">Security</p>
+                <p class="card-label">Security</p>
                 <h2>Protect the account</h2>
               </div>
             </div>
@@ -696,9 +489,9 @@
             </p>
 
             <article class="cta-card">
-              <p class="card-label">Workspace note</p>
+              <p class="card-label">Current direction</p>
               <p class="dashboard-card-copy">
-                Saved verses, study notes, prayer entries, and AI guides all stay attached to this account.
+                Selah is now centered on browsing scripture and generating verses, with saved notes and verses as support.
               </p>
             </article>
           </article>

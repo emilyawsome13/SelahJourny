@@ -1942,6 +1942,59 @@ h3 {
   color: var(--muted);
 }
 
+.dashboard-body .browser-hero-panel,
+.dashboard-body .quick-verse-card,
+.dashboard-body .browser-panel,
+.dashboard-body .generator-output-panel {
+  display: grid;
+  gap: 1rem;
+}
+
+.dashboard-body .stat-value-text {
+  font-size: 1.45rem;
+  line-height: 1.1;
+}
+
+.dashboard-body .quick-verse-text,
+.dashboard-body .generator-output-text {
+  color: var(--text);
+  font-family: "Newsreader", Georgia, serif;
+  font-size: 1.6rem;
+  line-height: 1.32;
+  letter-spacing: -0.03em;
+}
+
+.dashboard-body .action-cluster,
+.dashboard-body .generator-topic-list,
+.dashboard-body .browser-control-grid {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.dashboard-body .action-cluster {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.dashboard-body .browser-control-grid {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  align-items: end;
+}
+
+.dashboard-body .browser-layout,
+.dashboard-body .browser-lower-layout,
+.dashboard-body .generator-layout {
+  margin-top: 1.4rem;
+}
+
+.dashboard-body .generator-topic-list {
+  grid-template-columns: repeat(auto-fit, minmax(120px, max-content));
+  margin-top: 1rem;
+}
+
+.dashboard-body .quick-verse-card {
+  align-self: start;
+}
+
 .dashboard-body .plan-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -2008,6 +2061,7 @@ h3 {
   .dashboard-body .reader-toolbar-wide,
   .dashboard-body .reader-toolbar-actions,
   .dashboard-body .book-filter-layout,
+  .dashboard-body .browser-control-grid,
   .dashboard-body .plan-grid,
   .dashboard-body .topic-collection-list {
     grid-template-columns: 1fr;
@@ -2047,6 +2101,10 @@ h3 {
   .dashboard-body .library-action-row {
     width: 100%;
     justify-content: flex-start;
+  }
+
+  .dashboard-body .action-cluster {
+    grid-template-columns: 1fr;
   }
 
   .dashboard-body .verse-row {

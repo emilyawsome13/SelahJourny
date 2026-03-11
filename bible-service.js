@@ -193,6 +193,39 @@ const READING_PLANS = [
   }
 ];
 
+const GENERATOR_PRESETS = [
+  {
+    id: "daily",
+    label: "Verse of the day",
+    description: "Use today's featured verse as a simple starting point."
+  },
+  {
+    id: "random",
+    label: "Random verse",
+    description: "Pull a curated verse from the full Selah collection."
+  },
+  {
+    id: "topic",
+    label: "By topic",
+    description: "Generate a verse around a theme like peace, hope, or wisdom."
+  },
+  {
+    id: "testament",
+    label: "By testament",
+    description: "Stay inside either the Old Testament or New Testament."
+  },
+  {
+    id: "book",
+    label: "From a book",
+    description: "Generate a verse from a specific book you want to stay in."
+  },
+  {
+    id: "chapter",
+    label: "From current chapter",
+    description: "Generate a verse from the chapter you are browsing right now."
+  }
+];
+
 const FALLBACK_CHAPTERS = {
   "BSB:GEN:1": {
     headings: ["The Creation", "The First Day"],
@@ -416,6 +449,239 @@ function getReadingPlans() {
   }));
 }
 
+function normalizeTopicName(value) {
+  return String(value || "").trim().toLowerCase();
+}
+
+function buildReference(bookId, chapter, verse) {
+  const book = getBookById(bookId);
+  return `${book?.name || bookId} ${chapter}:${verse}`;
+}
+
+function buildCatalogVerse(entry, extras = {}) {
+  const translationId = extras.translationId || entry.translationId || "BSB";
+  const book = getBookById(entry.bookId);
+
+  return {
+    reference: entry.reference || buildReference(entry.bookId, entry.chapter, entry.verse),
+    translationId,
+    bookId: entry.bookId,
+    chapter: Number(entry.chapter),
+    verse: Number(entry.verse),
+    text: entry.text,
+    testament: book?.testament || "new",
+    group: book?.group || "Letters",
+    topics: [...new Set((extras.topics || entry.topics || []).filter(Boolean).map((topic) => String(topic)))],
+    source: extras.source || entry.source || "curated"
+  };
+}
+
+function buildCuratedVerseCatalog() {
+  const verseMap = new Map();
+
+  function upsertVerse(entry, extras = {}) {
+    const verse = buildCatalogVerse(entry, extras);
+    const key = `${verse.translationId}:${verse.reference}`;
+    const existing = verseMap.get(key);
+
+    if (!existing) {
+      verseMap.set(key, verse);
+      return;
+    }
+
+    existing.topics = [...new Set([...existing.topics, ...verse.topics])];
+    if (existing.source === "chapter" && verse.source !== "chapter") {
+      existing.source = verse.source;
+    }
+  }
+
+  for (const verse of VERSE_OF_DAY_ROTATION) {
+    upsertVerse(verse, {
+      source: "daily",
+      topics: ["Daily", "Featured"]
+    });
+  }
+
+  for (const collection of TOPIC_COLLECTIONS) {
+    for (const verse of collection.verses) {
+      upsertVerse(verse, {
+        source: "topic",
+        topics: [collection.topic]
+      });
+    }
+  }
+
+  for (const [key, chapter] of Object.entries(FALLBACK_CHAPTERS)) {
+    const [translationId, bookId, chapterText] = key.split(":");
+    const chapterNumber = Number(chapterText);
+
+    for (const verse of chapter.verses) {
+      upsertVerse({
+        bookId,
+        chapter: chapterNumber,
+        verse: verse.verse,
+        text: verse.text
+      }, {
+        translationId,
+        source: "chapter"
+      });
+    }
+  }
+
+  return [...verseMap.values()].sort((left, right) => left.reference.localeCompare(right.reference));
+}
+
+const CURATED_VERSE_CATALOG = buildCuratedVerseCatalog();
+
+function getCuratedVerseCatalog() {
+  return CURATED_VERSE_CATALOG.map((entry) => ({
+    ...entry,
+    topics: [...entry.topics]
+  }));
+}
+
+function getGeneratorPresets() {
+  return {
+    modes: GENERATOR_PRESETS.map((preset) => ({ ...preset })),
+    topics: TOPIC_COLLECTIONS.map((collection) => ({
+      topic: collection.topic,
+      summary: collection.summary
+    })),
+    testaments: [
+      { id: "all", label: "Whole Bible" },
+      { id: "old", label: "Old Testament" },
+      { id: "new", label: "New Testament" }
+    ]
+  };
+}
+
+function getCatalogVerseForDay(date = new Date()) {
+  const verseOfDay = getVerseOfDay(date);
+  const matched = CURATED_VERSE_CATALOG.find((entry) => (
+    entry.bookId === verseOfDay.bookId &&
+    entry.chapter === verseOfDay.chapter &&
+    entry.verse === verseOfDay.verse
+  ));
+
+  return matched ? { ...matched, topics: [...matched.topics] } : buildCatalogVerse(verseOfDay, {
+    source: "daily",
+    topics: ["Daily", "Featured"]
+  });
+}
+
+function simpleHash(value) {
+  const text = String(value || "");
+  let hash = 0;
+
+  for (let index = 0; index < text.length; index += 1) {
+    hash = ((hash * 31) + text.charCodeAt(index)) >>> 0;
+  }
+
+  return hash;
+}
+
+function buildGeneratorReason(mode, verse, options) {
+  if (mode === "daily") {
+    return "This is today's featured verse inside Selah.";
+  }
+
+  if (mode === "topic") {
+    const topic = String(options.topic || verse.topics[0] || "this theme").trim();
+    return `This verse was generated from the ${topic.toLowerCase()} theme collection.`;
+  }
+
+  if (mode === "testament") {
+    return verse.testament === "old"
+      ? "This verse was generated from the Old Testament."
+      : "This verse was generated from the New Testament.";
+  }
+
+  if (mode === "book") {
+    return `This verse was generated from ${getBookById(verse.bookId)?.name || verse.bookId}.`;
+  }
+
+  if (mode === "chapter") {
+    return `This verse was generated from ${getBookById(verse.bookId)?.name || verse.bookId} ${verse.chapter}.`;
+  }
+
+  return "This verse was generated from Selah's curated verse collection.";
+}
+
+function generateVerse(options = {}) {
+  const mode = new Set(GENERATOR_PRESETS.map((preset) => preset.id)).has(String(options.mode || "").toLowerCase())
+    ? String(options.mode || "").toLowerCase()
+    : "random";
+  const topicQuery = String(options.topic || "").trim();
+  const normalizedTopic = normalizeTopicName(topicQuery);
+  const testament = String(options.testament || "all").trim().toLowerCase();
+  const bookId = options.bookId ? String(options.bookId).trim().toUpperCase() : "";
+  const chapter = Number(options.chapter || 0);
+  const offset = Math.max(0, Number(options.offset || 0));
+
+  if (mode === "daily") {
+    const verse = getCatalogVerseForDay();
+    return {
+      ...verse,
+      mode,
+      reason: buildGeneratorReason(mode, verse, options)
+    };
+  }
+
+  const catalog = getCuratedVerseCatalog();
+  let pool = catalog;
+
+  if (mode === "topic") {
+    const matchingCollection = TOPIC_COLLECTIONS.find((collection) => normalizeTopicName(collection.topic) === normalizedTopic);
+
+    if (matchingCollection) {
+      pool = matchingCollection.verses.map((verse) => buildCatalogVerse(verse, {
+        source: "topic",
+        topics: [matchingCollection.topic]
+      }));
+    } else if (normalizedTopic) {
+      pool = catalog.filter((verse) => (
+        verse.topics.some((topic) => normalizeTopicName(topic).includes(normalizedTopic)) ||
+        verse.text.toLowerCase().includes(normalizedTopic) ||
+        verse.reference.toLowerCase().includes(normalizedTopic)
+      ));
+    }
+  } else if (mode === "testament" && (testament === "old" || testament === "new")) {
+    pool = catalog.filter((verse) => verse.testament === testament);
+  } else if (mode === "book" && bookId) {
+    pool = catalog.filter((verse) => verse.bookId === bookId);
+  } else if (mode === "chapter" && bookId && Number.isFinite(chapter) && chapter > 0) {
+    pool = catalog.filter((verse) => verse.bookId === bookId && verse.chapter === chapter);
+  }
+
+  if (!pool.length && bookId) {
+    pool = catalog.filter((verse) => verse.bookId === bookId);
+  }
+
+  if (!pool.length && (testament === "old" || testament === "new")) {
+    pool = catalog.filter((verse) => verse.testament === testament);
+  }
+
+  if (!pool.length) {
+    pool = catalog;
+  }
+
+  const seed = `${mode}|${normalizedTopic}|${testament}|${bookId}|${chapter}`;
+  const index = (simpleHash(seed) + offset) % pool.length;
+  const verse = {
+    ...pool[index],
+    topics: [...pool[index].topics]
+  };
+
+  return {
+    ...verse,
+    mode,
+    reason: buildGeneratorReason(mode, verse, {
+      ...options,
+      topic: topicQuery
+    })
+  };
+}
+
 module.exports = {
   getBooks,
   getTranslations,
@@ -424,5 +690,8 @@ module.exports = {
   getChapter,
   getVerseOfDay,
   getTopicCollections,
-  getReadingPlans
+  getReadingPlans,
+  getCuratedVerseCatalog,
+  getGeneratorPresets,
+  generateVerse
 };
