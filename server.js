@@ -44,6 +44,18 @@ function buildWelcomeEmailRecord(emailStatus) {
   };
 }
 
+function buildEmailVerificationRecord({ code, emailStatus }) {
+  return {
+    codeHash: sha256(code),
+    expiresAt: new Date(Date.now() + 1000 * 60 * 10).toISOString(),
+    lastSentAt: new Date().toISOString(),
+    mode: emailStatus.mode,
+    messageId: emailStatus.messageId || null,
+    error: emailStatus.error || null,
+    previewFile: emailStatus.previewFile || null
+  };
+}
+
 function sha256(value) {
   return crypto.createHash("sha256").update(String(value || "")).digest("hex");
 }
@@ -61,6 +73,88 @@ function maskEmail(value) {
   }
 
   return `${localPart.slice(0, 2)}${"*".repeat(Math.max(2, localPart.length - 2))}@${domain}`;
+}
+
+function normalizePhoneNumber(value) {
+  const raw = String(value || "").trim();
+
+  if (!raw) {
+    return "";
+  }
+
+  const hasLeadingPlus = raw.startsWith("+");
+  const digits = raw.replace(/\D/g, "");
+
+  if (hasLeadingPlus) {
+    return digits.length >= 10 && digits.length <= 15 ? `+${digits}` : "";
+  }
+
+  if (digits.length === 10) {
+    return `+1${digits}`;
+  }
+
+  if (digits.length === 11 && digits.startsWith("1")) {
+    return `+${digits}`;
+  }
+
+  return digits.length >= 10 && digits.length <= 15 ? `+${digits}` : "";
+}
+
+function isValidPhoneNumber(value) {
+  return Boolean(normalizePhoneNumber(value));
+}
+
+function maskPhoneNumber(value) {
+  const normalized = normalizePhoneNumber(value);
+  const digits = normalized.replace(/\D/g, "");
+
+  if (digits.length < 4) {
+    return normalized;
+  }
+
+  return `***-***-${digits.slice(-4)}`;
+}
+
+function generateVerificationCode() {
+  return String(crypto.randomInt(0, 1000000)).padStart(6, "0");
+}
+
+function isValidVerificationCode(value) {
+  return /^\d{6}$/.test(String(value || "").trim());
+}
+
+function buildPhoneChallengeRecord({ code, phoneNumber, purpose, deliveryStatus }) {
+  return {
+    phoneNumber: normalizePhoneNumber(phoneNumber),
+    purpose: String(purpose || "verify-phone"),
+    codeHash: sha256(code),
+    expiresAt: new Date(Date.now() + 1000 * 60 * 10).toISOString(),
+    lastSentAt: new Date().toISOString(),
+    mode: deliveryStatus.mode,
+    messageId: deliveryStatus.messageId || null,
+    error: deliveryStatus.error || null,
+    previewFile: deliveryStatus.previewFile || null
+  };
+}
+
+function isPhoneVerified(user) {
+  return Boolean(hydrateUserRecord(user).phone?.verifiedAt);
+}
+
+function needsPhoneVerification(user) {
+  return !isPhoneVerified(user);
+}
+
+function isEmailVerified(user) {
+  return Boolean(hydrateUserRecord(user).emailVerifiedAt);
+}
+
+function needsEmailVerification(user) {
+  return !isEmailVerified(user);
+}
+
+function getAuthRedirectPath(user) {
+  return needsEmailVerification(user) ? "/verify-email" : "/app";
 }
 
 const PRAYER_CATEGORIES = new Set([
@@ -202,6 +296,7 @@ function hydrateUserRecord(user) {
     ...DEFAULT_USER_SETTINGS,
     ...(user.settings || {})
   };
+  const normalizedPhoneNumber = normalizePhoneNumber(user.phone?.number || user.phoneNumber || "");
 
   return {
     ...user,
@@ -216,8 +311,15 @@ function hydrateUserRecord(user) {
         ...(mergedSettings.readingPosition || {})
       }
     },
+    phone: {
+      number: normalizedPhoneNumber,
+      verifiedAt: user.phone?.verifiedAt || null
+    },
+    emailVerifiedAt: user.emailVerifiedAt || null,
+    emailVerification: user.emailVerification || null,
     welcomeEmail: user.welcomeEmail || null,
-    passwordReset: user.passwordReset || null
+    passwordReset: user.passwordReset || null,
+    phoneChallenge: user.phoneChallenge || null
   };
 }
 
@@ -229,6 +331,17 @@ function publicUser(user) {
     name: hydratedUser.name,
     email: hydratedUser.email,
     createdAt: hydratedUser.createdAt,
+    emailVerification: {
+      maskedEmail: maskEmail(hydratedUser.email),
+      verifiedAt: hydratedUser.emailVerifiedAt,
+      isVerified: Boolean(hydratedUser.emailVerifiedAt)
+    },
+    phone: {
+      number: hydratedUser.phone.number,
+      maskedNumber: maskPhoneNumber(hydratedUser.phone.number),
+      verifiedAt: hydratedUser.phone.verifiedAt,
+      isVerified: Boolean(hydratedUser.phone.verifiedAt)
+    },
     welcomeEmail: hydratedUser.welcomeEmail || null,
     profile: hydratedUser.profile,
     settings: hydratedUser.settings
@@ -1137,7 +1250,24 @@ function escapeEmailHtml(value) {
     .replace(/'/g, "&#39;");
 }
 
-function buildWelcomeEmailHtml(displayName, appUrl) {
+function buildEmailLogoHtml(logoUrl) {
+  if (!logoUrl) {
+    return "";
+  }
+
+  const safeLogoUrl = escapeEmailHtml(logoUrl);
+  return `
+              <p style="margin:0 0 20px;">
+                <img
+                  src="${safeLogoUrl}"
+                  alt="Selah"
+                  width="148"
+                  style="display:block;width:148px;max-width:100%;height:auto;border:0;"
+                >
+              </p>`;
+}
+
+function buildWelcomeEmailHtml(displayName, appUrl, logoUrl = "") {
   const safeDisplayName = escapeEmailHtml(displayName || "there");
   const safeAppUrl = escapeEmailHtml(appUrl || "");
 
@@ -1161,6 +1291,7 @@ function buildWelcomeEmailHtml(displayName, appUrl) {
           </tr>
           <tr>
             <td style="padding:32px 36px;">
+              ${buildEmailLogoHtml(logoUrl)}
               <p style="margin:0 0 16px;font-size:16px;line-height:1.7;">Hi ${safeDisplayName},</p>
               <p style="margin:0 0 16px;font-size:16px;line-height:1.7;">
                 Thank you for creating a Selah account. Selah is a focused Bible browser built for
@@ -1203,7 +1334,59 @@ function buildWelcomeEmailHtml(displayName, appUrl) {
 </html>`;
 }
 
-function buildPasswordResetEmailHtml(displayName, resetUrl) {
+function buildEmailVerificationEmailHtml(displayName, code, appUrl = "", logoUrl = "") {
+  const safeDisplayName = escapeEmailHtml(displayName || "there");
+  const safeCode = escapeEmailHtml(code || "");
+  const safeAppUrl = escapeEmailHtml(appUrl || "");
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Verify your Selah email</title>
+</head>
+<body style="margin:0;padding:0;background:#f4ede0;font-family:Arial,sans-serif;color:#1f2b24;">
+  <table role="presentation" style="width:100%;border-collapse:collapse;background:#f4ede0;padding:24px 0;">
+    <tr>
+      <td align="center">
+        <table role="presentation" style="width:100%;max-width:620px;border-collapse:collapse;background:#fffaf1;border:1px solid #e3d7c3;border-radius:24px;overflow:hidden;">
+          <tr>
+            <td style="padding:36px 36px 24px;background:linear-gradient(135deg,#24382e 0%,#314a3d 100%);color:#fffaf1;">
+              <p style="margin:0 0 12px;font-size:12px;letter-spacing:2px;text-transform:uppercase;color:#dbc18e;">Selah</p>
+              <h1 style="margin:0;font-size:34px;line-height:1.05;font-family:Georgia,serif;">Verify your email.</h1>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:32px 36px;">
+              ${buildEmailLogoHtml(logoUrl)}
+              <p style="margin:0 0 16px;font-size:16px;line-height:1.7;">Hi ${safeDisplayName},</p>
+              <p style="margin:0 0 16px;font-size:16px;line-height:1.7;">
+                Enter the verification code below to finish activating your Selah account.
+              </p>
+              <div style="margin:0 0 18px;padding:18px 20px;border-radius:18px;background:#f3ecdf;border:1px solid #e3d7c3;text-align:center;">
+                <p style="margin:0 0 8px;font-size:12px;letter-spacing:2px;text-transform:uppercase;color:#b86e4b;">Verification code</p>
+                <p style="margin:0;font-size:36px;letter-spacing:8px;font-weight:700;color:#24382e;">${safeCode}</p>
+              </div>
+              <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#5d685f;">
+                This code expires in 10 minutes.
+              </p>
+              ${safeAppUrl ? `
+              <p style="margin:0;font-size:14px;line-height:1.7;color:#5d685f;">
+                Return to Selah here if you need it:<br>${safeAppUrl.replace(/\/$/, "")}/verify-email
+              </p>
+              ` : ""}
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+}
+
+function buildPasswordResetEmailHtml(displayName, resetUrl, logoUrl = "") {
   const safeDisplayName = escapeEmailHtml(displayName || "there");
   const safeResetUrl = escapeEmailHtml(resetUrl || "");
 
@@ -1227,6 +1410,7 @@ function buildPasswordResetEmailHtml(displayName, resetUrl) {
           </tr>
           <tr>
             <td style="padding:32px 36px;">
+              ${buildEmailLogoHtml(logoUrl)}
               <p style="margin:0 0 16px;font-size:16px;line-height:1.7;">Hi ${safeDisplayName},</p>
               <p style="margin:0 0 16px;font-size:16px;line-height:1.7;">
                 A request came in to reset your Selah password. Use the button below to choose a new one.
@@ -1273,6 +1457,21 @@ function buildWelcomeEmailText(displayName, appUrl) {
     "",
     "Selah"
   ].join("\n");
+}
+
+function buildEmailVerificationEmailText(displayName, code, appUrl = "") {
+  return [
+    `Hi ${displayName},`,
+    "",
+    "Enter this verification code to finish activating your Selah account:",
+    code || "",
+    "",
+    "This code expires in 10 minutes.",
+    "",
+    appUrl ? `Return to Selah here: ${String(appUrl).replace(/\/$/, "")}/verify-email` : "",
+    "",
+    "Selah"
+  ].filter(Boolean).join("\n");
 }
 
 function buildPasswordResetEmailText(displayName, resetUrl) {
@@ -1429,20 +1628,43 @@ function createStorage({
     await writeJsonFileAtomic(studyNotesFile, studyNotes);
   }
 
-  async function saveEmailPreview({ prefix = "email", email, subject, html }) {
+  async function savePreviewFile({ prefix = "preview", identifier, extension = "txt", body }) {
     await fs.mkdir(emailDir, { recursive: true });
-    const safeEmail = email.replace(/[^a-z0-9]+/gi, "-").replace(/^-+|-+$/g, "") || "member";
+    const safeIdentifier = String(identifier || "member").replace(/[^a-z0-9]+/gi, "-").replace(/^-+|-+$/g, "") || "member";
     const safePrefix = String(prefix || "email").replace(/[^a-z0-9]+/gi, "-").replace(/^-+|-+$/g, "") || "email";
-    const fileName = `${safePrefix}-${Date.now()}-${safeEmail}.html`;
+    const safeExtension = String(extension || "txt").replace(/[^a-z0-9]+/gi, "") || "txt";
+    const fileName = `${safePrefix}-${Date.now()}-${safeIdentifier}.${safeExtension}`;
     const filePath = path.join(emailDir, fileName);
 
-    await fs.writeFile(filePath, html, "utf8");
+    await fs.writeFile(filePath, body, "utf8");
 
     return {
       fileName,
-      filePath,
+      filePath
+    };
+  }
+
+  async function saveEmailPreview({ prefix = "email", email, subject, html }) {
+    const preview = await savePreviewFile({
+      prefix,
+      identifier: email,
+      extension: "html",
+      body: html
+    });
+
+    return {
+      ...preview,
       subject
     };
+  }
+
+  async function saveTextPreview({ prefix = "message", recipient, text }) {
+    return savePreviewFile({
+      prefix,
+      identifier: recipient,
+      extension: "txt",
+      body: text
+    });
   }
 
   return {
@@ -1459,16 +1681,18 @@ function createStorage({
     writeSavedVerses,
     readStudyNotes,
     writeStudyNotes,
-    saveEmailPreview
+    saveEmailPreview,
+    saveTextPreview
   };
 }
 
-function createMailer({ env, storage, transportFactory = nodemailer.createTransport }) {
+function createMailer({ env, storage, rootDir, transportFactory = nodemailer.createTransport }) {
   let transporterPromise = null;
   const emailDeliveryTimeoutMs = Math.max(
     1000,
     Number.parseInt(String(env.EMAIL_DELIVERY_TIMEOUT_MS || "5000"), 10) || 5000
   );
+  const brandLogoFile = path.join(rootDir || __dirname, "assets", "selah-logo.png");
 
   function withEmailTimeout(promise, operationLabel) {
     let timeoutHandle = null;
@@ -1515,6 +1739,15 @@ function createMailer({ env, storage, transportFactory = nodemailer.createTransp
     }
 
     return `${prefix}Email delivery failed, so a preview was saved in emails/${preview.fileName}.`;
+  }
+
+  async function getBrandLogoUrl(appUrl) {
+    try {
+      await fs.access(brandLogoFile);
+      return appUrl ? `${String(appUrl).replace(/\/$/, "")}/assets/selah-logo.png` : "";
+    } catch {
+      return "";
+    }
   }
 
   async function getTransporter() {
@@ -1619,7 +1852,8 @@ function createMailer({ env, storage, transportFactory = nodemailer.createTransp
     const phase = options.phase === "resend" ? "resend" : "signup";
     const subject = "Your Selah account is ready";
     const appUrl = String(options.appUrl || env.APP_BASE_URL || env.RENDER_EXTERNAL_URL || "").trim();
-    const html = buildWelcomeEmailHtml(user.name, appUrl);
+    const logoUrl = await getBrandLogoUrl(appUrl);
+    const html = buildWelcomeEmailHtml(user.name, appUrl, logoUrl);
     const text = buildWelcomeEmailText(user.name, appUrl);
     return deliverEmail({
       prefix: "welcome",
@@ -1633,9 +1867,30 @@ function createMailer({ env, storage, transportFactory = nodemailer.createTransp
     });
   }
 
+  async function sendEmailVerificationEmail(user, options = {}) {
+    const appUrl = String(options.appUrl || env.APP_BASE_URL || env.RENDER_EXTERNAL_URL || "").trim();
+    const logoUrl = await getBrandLogoUrl(appUrl);
+    const subject = "Verify your Selah email";
+    const html = buildEmailVerificationEmailHtml(user.name, options.code, appUrl, logoUrl);
+    const text = buildEmailVerificationEmailText(user.name, options.code, appUrl);
+
+    return deliverEmail({
+      prefix: "email-verification",
+      to: user.email,
+      subject,
+      html,
+      text,
+      onSentMessage: () => `A verification code was sent to ${user.email}.`,
+      onMissingConfigMessage: (preview) => `SMTP is not configured yet, so a verification email preview was saved in emails/${preview.fileName}.`,
+      onFailureMessage: (preview) => `Verification email delivery failed, so a preview was saved in emails/${preview.fileName}.`
+    });
+  }
+
   async function sendPasswordResetEmail(user, options = {}) {
     const subject = "Reset your Selah password";
-    const html = buildPasswordResetEmailHtml(user.name, options.resetUrl);
+    const appUrl = String(env.APP_BASE_URL || env.RENDER_EXTERNAL_URL || "").trim();
+    const logoUrl = await getBrandLogoUrl(appUrl);
+    const html = buildPasswordResetEmailHtml(user.name, options.resetUrl, logoUrl);
     const text = buildPasswordResetEmailText(user.name, options.resetUrl);
 
     return deliverEmail({
@@ -1651,8 +1906,136 @@ function createMailer({ env, storage, transportFactory = nodemailer.createTransp
   }
 
   return {
+    sendEmailVerificationEmail,
     sendWelcomeEmail,
     sendPasswordResetEmail
+  };
+}
+
+function createSmsSender({ env, storage }) {
+  const smsDeliveryTimeoutMs = Math.max(
+    1000,
+    Number.parseInt(String(env.SMS_DELIVERY_TIMEOUT_MS || "5000"), 10) || 5000
+  );
+
+  function withSmsTimeout(promise, operationLabel) {
+    let timeoutHandle = null;
+
+    const timeoutPromise = new Promise((resolve, reject) => {
+      timeoutHandle = setTimeout(() => {
+        reject(new Error(`${operationLabel} timed out after ${smsDeliveryTimeoutMs}ms.`));
+      }, smsDeliveryTimeoutMs);
+    });
+
+    return Promise.race([promise, timeoutPromise]).finally(() => {
+      if (timeoutHandle) {
+        clearTimeout(timeoutHandle);
+      }
+    });
+  }
+
+  async function deliverSms({
+    prefix,
+    to,
+    message,
+    onSentMessage,
+    onMissingConfigMessage,
+    onFailureMessage
+  }) {
+    const accountSid = String(env.TWILIO_ACCOUNT_SID || "").trim();
+    const authToken = String(env.TWILIO_AUTH_TOKEN || "").trim();
+    const fromNumber = String(env.TWILIO_PHONE_NUMBER || "").trim();
+    const messagingServiceSid = String(env.TWILIO_MESSAGING_SERVICE_SID || "").trim();
+    const hasSmsConfig = Boolean(accountSid && authToken && (fromNumber || messagingServiceSid));
+
+    if (!hasSmsConfig) {
+      const preview = await storage.saveTextPreview({
+        prefix,
+        recipient: to,
+        text: message
+      });
+
+      return {
+        mode: "preview",
+        message: onMissingConfigMessage(preview),
+        previewFile: preview.fileName
+      };
+    }
+
+    try {
+      const body = new URLSearchParams({
+        To: to,
+        Body: message
+      });
+
+      if (messagingServiceSid) {
+        body.set("MessagingServiceSid", messagingServiceSid);
+      } else {
+        body.set("From", fromNumber);
+      }
+
+      const response = await withSmsTimeout(fetch(
+        `https://api.twilio.com/2010-04-01/Accounts/${encodeURIComponent(accountSid)}/Messages.json`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Basic ${Buffer.from(`${accountSid}:${authToken}`).toString("base64")}`,
+            "Content-Type": "application/x-www-form-urlencoded"
+          },
+          body: body.toString()
+        }
+      ), "SMS delivery");
+
+      const payload = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(payload.message || `SMS request failed with status ${response.status}.`);
+      }
+
+      return {
+        mode: "sms",
+        message: onSentMessage(),
+        messageId: payload.sid || null
+      };
+    } catch (error) {
+      const preview = await storage.saveTextPreview({
+        prefix,
+        recipient: to,
+        text: message
+      });
+
+      return {
+        mode: "preview",
+        message: onFailureMessage(preview),
+        error: error.message,
+        previewFile: preview.fileName
+      };
+    }
+  }
+
+  async function sendPhoneCode(user, options = {}) {
+    const purpose = options.purpose === "phone-login" ? "phone-login" : "verify-phone";
+    const code = String(options.code || generateVerificationCode());
+    const actionLabel = purpose === "phone-login" ? "sign in to Selah" : "verify your Selah account";
+    const message = `Selah code: ${code}. Enter this code to ${actionLabel}. It expires in 10 minutes.`;
+
+    const deliveryStatus = await deliverSms({
+      prefix: purpose === "phone-login" ? "phone-login" : "phone-verify",
+      to: user.phone.number,
+      message,
+      onSentMessage: () => `A verification code was sent to ${maskPhoneNumber(user.phone.number)}.`,
+      onMissingConfigMessage: (preview) => `SMS is not configured yet, so a verification code preview was saved in emails/${preview.fileName}.`,
+      onFailureMessage: (preview) => `SMS delivery failed, so a verification code preview was saved in emails/${preview.fileName}.`
+    });
+
+    return {
+      code,
+      deliveryStatus
+    };
+  }
+
+  return {
+    sendPhoneCode
   };
 }
 
@@ -1694,8 +2077,10 @@ function createApp(options = {}) {
   const mailer = createMailer({
     env,
     storage,
+    rootDir,
     transportFactory: options.transportFactory
   });
+  const smsSender = createSmsSender({ env, storage });
   const app = express();
 
   if (String(env.NODE_ENV || "").toLowerCase() === "production" && !sessionSecret) {
@@ -1718,6 +2103,89 @@ function createApp(options = {}) {
 
   function getWorkspaceUrl(request) {
     return `${getBaseUrl(request).replace(/\/$/, "")}/app`;
+  }
+
+  async function issueEmailVerification({ user, users, request }) {
+    const code = generateVerificationCode();
+    const emailStatus = await mailer.sendEmailVerificationEmail(user, {
+      code,
+      appUrl: getBaseUrl(request)
+    });
+
+    user.emailVerification = buildEmailVerificationRecord({
+      code,
+      emailStatus
+    });
+    await storage.writeUsers(users);
+    return emailStatus;
+  }
+
+  function validateEmailVerification(user, code) {
+    const hydratedUser = hydrateUserRecord(user);
+    const record = hydratedUser.emailVerification;
+    const normalizedCode = String(code || "").trim();
+
+    if (!record?.codeHash || !record?.expiresAt) {
+      return { valid: false, message: "Request a new verification email and try again." };
+    }
+
+    if (new Date(record.expiresAt).getTime() <= Date.now()) {
+      return { valid: false, message: "This verification code has expired. Request a new one." };
+    }
+
+    if (!isValidVerificationCode(normalizedCode) || record.codeHash !== sha256(normalizedCode)) {
+      return { valid: false, message: "That verification code is invalid." };
+    }
+
+    return { valid: true };
+  }
+
+  function findUserByPhoneNumber(users, phoneNumber) {
+    const normalizedPhoneNumber = normalizePhoneNumber(phoneNumber);
+    return users.find((entry) => hydrateUserRecord(entry).phone.number === normalizedPhoneNumber) || null;
+  }
+
+  async function issuePhoneChallenge({ user, users, purpose }) {
+    const hydratedUser = hydrateUserRecord(user);
+    const { code, deliveryStatus } = await smsSender.sendPhoneCode(hydratedUser, { purpose });
+    user.phoneChallenge = buildPhoneChallengeRecord({
+      code,
+      phoneNumber: hydratedUser.phone.number,
+      purpose,
+      deliveryStatus
+    });
+    await storage.writeUsers(users);
+    return deliveryStatus;
+  }
+
+  function validatePhoneChallenge(user, options = {}) {
+    const hydratedUser = hydrateUserRecord(user);
+    const challenge = hydratedUser.phoneChallenge;
+    const purpose = String(options.purpose || "verify-phone");
+    const normalizedPhoneNumber = normalizePhoneNumber(options.phoneNumber || hydratedUser.phone.number);
+    const code = String(options.code || "").trim();
+
+    if (!challenge?.codeHash || !challenge?.expiresAt) {
+      return { valid: false, message: "Request a new verification code and try again." };
+    }
+
+    if (challenge.purpose !== purpose) {
+      return { valid: false, message: "This verification code is not valid for that action." };
+    }
+
+    if (challenge.phoneNumber !== normalizedPhoneNumber) {
+      return { valid: false, message: "This verification code does not match that phone number." };
+    }
+
+    if (new Date(challenge.expiresAt).getTime() <= Date.now()) {
+      return { valid: false, message: "This verification code has expired. Request a new one." };
+    }
+
+    if (!isValidVerificationCode(code) || challenge.codeHash !== sha256(code)) {
+      return { valid: false, message: "That verification code is invalid." };
+    }
+
+    return { valid: true, normalizedPhoneNumber };
   }
 
   function createPasswordResetRecord(token, emailStatus) {
@@ -1806,7 +2274,7 @@ function createApp(options = {}) {
       const { user } = await findSessionUser(request);
 
       if (user) {
-        response.redirect("/app");
+        response.redirect(getAuthRedirectPath(user));
         return;
       }
 
@@ -1819,7 +2287,7 @@ function createApp(options = {}) {
   app.get("/signup", async (request, response, next) => {
     try {
       const { user } = await findSessionUser(request);
-      response.redirect(user ? "/app" : "/?auth=signup");
+      response.redirect(user ? getAuthRedirectPath(user) : "/?auth=signup");
     } catch (error) {
       next(error);
     }
@@ -1828,7 +2296,7 @@ function createApp(options = {}) {
   app.get("/login", async (request, response, next) => {
     try {
       const { user } = await findSessionUser(request);
-      response.redirect(user ? "/app" : "/?auth=login");
+      response.redirect(user ? getAuthRedirectPath(user) : "/?auth=login");
     } catch (error) {
       next(error);
     }
@@ -1837,7 +2305,42 @@ function createApp(options = {}) {
   app.get("/recover", async (request, response, next) => {
     try {
       const { user } = await findSessionUser(request);
-      response.redirect(user ? "/app" : "/?auth=recover");
+      response.redirect(user ? getAuthRedirectPath(user) : "/?auth=recover");
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.get("/verify-phone", async (request, response, next) => {
+    try {
+      const { user } = await findSessionUser(request);
+
+      if (!user) {
+        response.redirect("/?auth=login");
+        return;
+      }
+
+      response.redirect(getAuthRedirectPath(user));
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.get("/verify-email", async (request, response, next) => {
+    try {
+      const { user } = await findSessionUser(request);
+
+      if (!user) {
+        response.redirect("/?auth=login");
+        return;
+      }
+
+      if (!needsEmailVerification(user)) {
+        response.redirect("/app");
+        return;
+      }
+
+      response.sendFile(path.join(rootDir, "verify-email.html"));
     } catch (error) {
       next(error);
     }
@@ -1852,6 +2355,11 @@ function createApp(options = {}) {
         return;
       }
 
+      if (needsEmailVerification(user)) {
+        response.redirect("/verify-email");
+        return;
+      }
+
       response.sendFile(path.join(rootDir, "dashboard.html"));
     } catch (error) {
       next(error);
@@ -1861,6 +2369,8 @@ function createApp(options = {}) {
   app.get("/reset-password", (request, response) => {
     response.sendFile(path.join(rootDir, "reset-password.html"));
   });
+
+  app.use("/assets", express.static(path.join(rootDir, "assets")));
 
   app.get("/styles.css", (request, response) => {
     response.sendFile(path.join(rootDir, "styles.css"));
@@ -1878,6 +2388,14 @@ function createApp(options = {}) {
     response.sendFile(path.join(rootDir, "reset-password.js"));
   });
 
+  app.get("/verify-phone.js", (request, response) => {
+    response.redirect("/verify-email.js");
+  });
+
+  app.get("/verify-email.js", (request, response) => {
+    response.sendFile(path.join(rootDir, "verify-email.js"));
+  });
+
   app.get("/api/session", async (request, response, next) => {
     try {
       const { user } = await findSessionUser(request);
@@ -1893,8 +2411,39 @@ function createApp(options = {}) {
 
       response.json({
         authenticated: true,
+        needsEmailVerification: needsEmailVerification(user),
+        needsPhoneVerification: needsEmailVerification(user),
         user: publicUser(user)
       });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.use([
+    "/api/bible",
+    "/api/prayers",
+    "/api/checkins",
+    "/api/ai",
+    "/api/library",
+    "/api/study-notes",
+    "/api/account/profile",
+    "/api/account/settings",
+    "/api/account/password",
+    "/api/welcome-email/resend"
+  ], async (request, response, next) => {
+    try {
+      const { user } = await findSessionUser(request);
+
+      if (user && needsEmailVerification(user)) {
+        response.status(403).json({
+          message: "Verify your email to continue.",
+          redirectTo: "/verify-email"
+        });
+        return;
+      }
+
+      next();
     } catch (error) {
       next(error);
     }
@@ -2419,6 +2968,13 @@ function createApp(options = {}) {
         email,
         passwordHash: await bcrypt.hash(password, 12),
         createdAt: new Date().toISOString(),
+        emailVerifiedAt: null,
+        emailVerification: null,
+        phone: {
+          number: "",
+          verifiedAt: null
+        },
+        phoneChallenge: null,
         welcomeEmail: null,
         passwordReset: null
       };
@@ -2429,6 +2985,11 @@ function createApp(options = {}) {
       await sessionRegenerate(request);
       request.session.userId = user.id;
 
+      const verificationStatus = await issueEmailVerification({
+        user,
+        users,
+        request
+      });
       const emailStatus = await mailer.sendWelcomeEmail(user, {
         phase: "signup",
         appUrl: getWorkspaceUrl(request)
@@ -2437,10 +2998,11 @@ function createApp(options = {}) {
       await storage.writeUsers(users);
 
       response.status(201).json({
-        message: "Your account is ready.",
+        message: "Your account is ready. Verify your email to continue.",
         user: publicUser(user),
         emailStatus,
-        redirectTo: "/app"
+        verificationStatus,
+        redirectTo: "/verify-email"
       });
     } catch (error) {
       next(error);
@@ -2475,8 +3037,116 @@ function createApp(options = {}) {
       await sessionRegenerate(request);
       request.session.userId = user.id;
 
+      if (needsEmailVerification(user)) {
+        const verificationStatus = await issueEmailVerification({
+          user,
+          users,
+          request
+        });
+
+        response.json({
+          message: "Verify your email to continue.",
+          user: publicUser(user),
+          verificationStatus,
+          redirectTo: "/verify-email"
+        });
+        return;
+      }
+
       response.json({
         message: `Welcome back, ${user.name}.`,
+        user: publicUser(user),
+        redirectTo: "/app"
+      });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.post("/api/phone-auth/request-code", async (request, response, next) => {
+    try {
+      const phoneNumber = normalizePhoneNumber(request.body.phoneNumber);
+      const genericMessage = "If that phone number exists, a sign-in code has been sent.";
+
+      if (!phoneNumber) {
+        response.status(400).json({ message: "Please enter a valid phone number." });
+        return;
+      }
+
+      const users = await storage.readUsers();
+      const user = findUserByPhoneNumber(users, phoneNumber);
+
+      if (!user) {
+        response.json({
+          message: genericMessage,
+          phoneNumber
+        });
+        return;
+      }
+
+      const phoneStatus = await issuePhoneChallenge({
+        user,
+        users,
+        purpose: "phone-login"
+      });
+
+      response.json({
+        message: genericMessage,
+        phoneNumber,
+        maskedPhoneNumber: maskPhoneNumber(phoneNumber),
+        phoneStatus
+      });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.post("/api/phone-auth/verify-code", async (request, response, next) => {
+    try {
+      const phoneNumber = normalizePhoneNumber(request.body.phoneNumber);
+      const code = String(request.body.code || "").trim();
+
+      if (!phoneNumber) {
+        response.status(400).json({ message: "Please enter a valid phone number." });
+        return;
+      }
+
+      if (!isValidVerificationCode(code)) {
+        response.status(400).json({ message: "Enter the 6-digit verification code." });
+        return;
+      }
+
+      const users = await storage.readUsers();
+      const user = findUserByPhoneNumber(users, phoneNumber);
+
+      if (!user) {
+        response.status(401).json({ message: "That phone code is invalid or expired." });
+        return;
+      }
+
+      const validation = validatePhoneChallenge(user, {
+        purpose: "phone-login",
+        phoneNumber,
+        code
+      });
+
+      if (!validation.valid) {
+        response.status(401).json({ message: validation.message });
+        return;
+      }
+
+      user.phone = {
+        number: phoneNumber,
+        verifiedAt: user.phone?.verifiedAt || new Date().toISOString()
+      };
+      user.phoneChallenge = null;
+      await storage.writeUsers(users);
+
+      await sessionRegenerate(request);
+      request.session.userId = user.id;
+
+      response.json({
+        message: "Phone verified. Opening your Bible library...",
         user: publicUser(user),
         redirectTo: "/app"
       });
@@ -2707,6 +3377,199 @@ function createApp(options = {}) {
     }
   });
 
+  app.post("/api/email/verification/resend", async (request, response, next) => {
+    try {
+      const { user, users } = await findSessionUser(request);
+
+      if (!user || !users) {
+        response.status(401).json({ message: "Please log in to verify your email." });
+        return;
+      }
+
+      if (isEmailVerified(user)) {
+        response.json({
+          message: "Your email is already verified.",
+          user: publicUser(user)
+        });
+        return;
+      }
+
+      const verificationStatus = await issueEmailVerification({
+        user,
+        users,
+        request
+      });
+
+      response.json({
+        message: verificationStatus.message,
+        user: publicUser(user),
+        verificationStatus
+      });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.post("/api/email/verification/confirm", async (request, response, next) => {
+    try {
+      const { user, users } = await findSessionUser(request);
+      const code = String(request.body.code || "").trim();
+
+      if (!user || !users) {
+        response.status(401).json({ message: "Please log in to verify your email." });
+        return;
+      }
+
+      if (!isValidVerificationCode(code)) {
+        response.status(400).json({ message: "Enter the 6-digit verification code." });
+        return;
+      }
+
+      const validation = validateEmailVerification(user, code);
+
+      if (!validation.valid) {
+        response.status(400).json({ message: validation.message });
+        return;
+      }
+
+      user.emailVerifiedAt = new Date().toISOString();
+      user.emailVerification = null;
+      await storage.writeUsers(users);
+
+      response.json({
+        message: "Email verified. Opening your Bible library...",
+        user: publicUser(user),
+        redirectTo: "/app"
+      });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.post("/api/phone/verification/resend", async (request, response, next) => {
+    try {
+      const { user, users } = await findSessionUser(request);
+
+      if (!user || !users) {
+        response.status(401).json({ message: "Please log in to verify your phone number." });
+        return;
+      }
+
+      if (!user.phone?.number) {
+        response.status(400).json({ message: "Add a phone number to your account before requesting a code." });
+        return;
+      }
+
+      if (isPhoneVerified(user)) {
+        response.json({
+          message: "Your phone number is already verified.",
+          user: publicUser(user)
+        });
+        return;
+      }
+
+      const phoneStatus = await issuePhoneChallenge({
+        user,
+        users,
+        purpose: "verify-phone"
+      });
+
+      response.json({
+        message: phoneStatus.message,
+        user: publicUser(user),
+        phoneStatus
+      });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.post("/api/phone/verification/start", async (request, response, next) => {
+    try {
+      const { user, users } = await findSessionUser(request);
+      const phoneNumber = normalizePhoneNumber(request.body.phoneNumber);
+
+      if (!user || !users) {
+        response.status(401).json({ message: "Please log in to verify your phone number." });
+        return;
+      }
+
+      if (!phoneNumber) {
+        response.status(400).json({ message: "Please enter a valid phone number." });
+        return;
+      }
+
+      const existingPhoneUser = findUserByPhoneNumber(users, phoneNumber);
+
+      if (existingPhoneUser && existingPhoneUser.id !== user.id) {
+        response.status(409).json({ message: "That phone number is already linked to another account." });
+        return;
+      }
+
+      user.phone = {
+        number: phoneNumber,
+        verifiedAt: null
+      };
+
+      const phoneStatus = await issuePhoneChallenge({
+        user,
+        users,
+        purpose: "verify-phone"
+      });
+
+      response.json({
+        message: phoneStatus.message,
+        user: publicUser(user),
+        phoneStatus
+      });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.post("/api/phone/verification/confirm", async (request, response, next) => {
+    try {
+      const { user, users } = await findSessionUser(request);
+      const code = String(request.body.code || "").trim();
+
+      if (!user || !users) {
+        response.status(401).json({ message: "Please log in to verify your phone number." });
+        return;
+      }
+
+      if (!isValidVerificationCode(code)) {
+        response.status(400).json({ message: "Enter the 6-digit verification code." });
+        return;
+      }
+
+      const validation = validatePhoneChallenge(user, {
+        purpose: "verify-phone",
+        phoneNumber: user.phone?.number,
+        code
+      });
+
+      if (!validation.valid) {
+        response.status(400).json({ message: validation.message });
+        return;
+      }
+
+      user.phone = {
+        number: user.phone.number,
+        verifiedAt: new Date().toISOString()
+      };
+      user.phoneChallenge = null;
+      await storage.writeUsers(users);
+
+      response.json({
+        message: "Phone verified. Opening your Bible library...",
+        user: publicUser(user),
+        redirectTo: "/app"
+      });
+    } catch (error) {
+      next(error);
+    }
+  });
+
   app.post("/api/password/forgot", async (request, response, next) => {
     try {
       const email = normalizeEmail(request.body.email);
@@ -2799,10 +3662,23 @@ function createApp(options = {}) {
       await sessionRegenerate(request);
       request.session.userId = user.id;
 
+      let verificationStatus = null;
+
+      if (needsEmailVerification(user)) {
+        verificationStatus = await issueEmailVerification({
+          user,
+          users,
+          request
+        });
+      }
+
       response.json({
-        message: "Password updated. Opening your prayer journal...",
+        message: needsEmailVerification(user)
+          ? "Password updated. Verify your email to continue."
+          : "Password updated. Opening your Bible library...",
         user: publicUser(user),
-        redirectTo: "/app"
+        verificationStatus,
+        redirectTo: getAuthRedirectPath(user)
       });
     } catch (error) {
       next(error);

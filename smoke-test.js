@@ -3,6 +3,8 @@ const fs = require("node:fs/promises");
 const os = require("node:os");
 const path = require("node:path");
 
+const bcrypt = require("bcryptjs");
+
 const { createApp } = require("./server");
 
 function getCookie(response) {
@@ -70,7 +72,8 @@ async function main() {
     assert.ok(homeHtml.includes("Need an account on this site? Create one"));
     assert.ok(homeHtml.includes('href="/login"'));
     assert.ok(homeHtml.includes('href="/signup"'));
-    assert.ok(homeHtml.includes("This flow creates a new Selah account for this live site."));
+    assert.ok(homeHtml.includes("data-brand-logo-shell"));
+    assert.equal(homeHtml.includes("Use phone code instead"), false);
 
     const stylesResponse = await fetch(`${baseUrl}/styles.css`);
     assert.equal(stylesResponse.status, 200);
@@ -132,16 +135,25 @@ async function main() {
     assert.equal(signupResponse.status, 201);
     const signupData = await signupResponse.json();
     assert.equal(signupData.user.email, "esther@example.com");
+    assert.equal(signupData.user.emailVerification.isVerified, false);
     assert.equal(signupData.emailStatus.mode, "preview");
-    assert.equal(signupData.redirectTo, "/app");
+    assert.equal(signupData.verificationStatus.mode, "preview");
+    assert.equal(signupData.redirectTo, "/verify-email");
 
     const previewFiles = await fs.readdir(emailDir);
-    assert.equal(previewFiles.length, 1);
-    const welcomePreviewHtml = await fs.readFile(path.join(emailDir, previewFiles[0]), "utf8");
+    const welcomePreviewFiles = previewFiles.filter((name) => name.startsWith("welcome-"));
+    const verificationPreviewFiles = previewFiles.filter((name) => name.startsWith("email-verification-"));
+    assert.equal(welcomePreviewFiles.length, 1);
+    assert.equal(verificationPreviewFiles.length, 1);
+    const welcomePreviewHtml = await fs.readFile(path.join(emailDir, welcomePreviewFiles[0]), "utf8");
     assert.ok(welcomePreviewHtml.includes("Your account is ready."));
     assert.ok(welcomePreviewHtml.includes("Open Selah"));
     assert.ok(welcomePreviewHtml.includes("Browse by book, chapter, and translation."));
     assert.ok(welcomePreviewHtml.includes("/app"));
+    const verificationPreviewHtml = await fs.readFile(path.join(emailDir, verificationPreviewFiles[0]), "utf8");
+    const verifyCodeMatch = verificationPreviewHtml.match(/Verification code[\s\S]*?>(\d{6})</i);
+    assert.ok(verifyCodeMatch);
+    const emailVerificationCode = verifyCodeMatch[1];
 
     const cookie = getCookie(signupResponse);
     assert.ok(cookie.includes("selah.sid="));
@@ -154,16 +166,65 @@ async function main() {
     });
 
     assert.equal(authedHomeResponse.status, 302);
-    assert.equal(authedHomeResponse.headers.get("location"), "/app");
+    assert.equal(authedHomeResponse.headers.get("location"), "/verify-email");
 
     const appResponse = await fetch(`${baseUrl}/app`, {
       headers: {
         Cookie: cookie
-      }
+      },
+      redirect: "manual"
     });
 
-    assert.equal(appResponse.status, 200);
-    const appHtml = await appResponse.text();
+    assert.equal(appResponse.status, 302);
+    assert.equal(appResponse.headers.get("location"), "/verify-email");
+
+    const verifyEmailPageResponse = await fetch(`${baseUrl}/verify-email`, {
+      headers: {
+        Cookie: cookie
+      }
+    });
+    assert.equal(verifyEmailPageResponse.status, 200);
+    const verifyEmailHtml = await verifyEmailPageResponse.text();
+    assert.ok(verifyEmailHtml.includes("Verify your email"));
+
+    const verifyEmailScriptResponse = await fetch(`${baseUrl}/verify-email.js`);
+    assert.equal(verifyEmailScriptResponse.status, 200);
+    const verifyEmailScript = await verifyEmailScriptResponse.text();
+    assert.ok(verifyEmailScript.includes("loadVerificationState"));
+
+    const sessionBeforeVerifyResponse = await fetch(`${baseUrl}/api/session`, {
+      headers: {
+        Cookie: cookie
+      }
+    });
+    assert.equal(sessionBeforeVerifyResponse.status, 200);
+    const sessionBeforeVerifyData = await sessionBeforeVerifyResponse.json();
+    assert.equal(sessionBeforeVerifyData.authenticated, true);
+    assert.equal(sessionBeforeVerifyData.needsEmailVerification, true);
+    assert.equal(sessionBeforeVerifyData.user.emailVerification.isVerified, false);
+
+    const emailVerificationResponse = await fetch(`${baseUrl}/api/email/verification/confirm`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Cookie: cookie
+      },
+      body: JSON.stringify({
+        code: emailVerificationCode
+      })
+    });
+    assert.equal(emailVerificationResponse.status, 200);
+    const emailVerificationData = await emailVerificationResponse.json();
+    assert.equal(emailVerificationData.user.emailVerification.isVerified, true);
+    assert.equal(emailVerificationData.redirectTo, "/app");
+
+    const verifiedAppResponse = await fetch(`${baseUrl}/app`, {
+      headers: {
+        Cookie: cookie
+      }
+    });
+    assert.equal(verifiedAppResponse.status, 200);
+    const appHtml = await verifiedAppResponse.text();
     assert.ok(appHtml.includes("Bible Browser"));
     assert.ok(appHtml.includes("Verse Generator"));
     assert.ok(appHtml.includes("Continue Reading"));
@@ -182,6 +243,7 @@ async function main() {
     assert.equal(sessionResponse.status, 200);
     const sessionData = await sessionResponse.json();
     assert.equal(sessionData.authenticated, true);
+    assert.equal(sessionData.needsEmailVerification, false);
     assert.equal(sessionData.user.name, "Esther");
     assert.equal(sessionData.user.profile.focus, "Presence over performance");
     assert.equal(sessionData.user.settings.defaultAiMode, "companion");
@@ -637,7 +699,9 @@ async function main() {
     assert.equal(resendData.emailStatus.mode, "preview");
 
     const resendPreviewFiles = await fs.readdir(emailDir);
-    assert.equal(resendPreviewFiles.length, 3);
+    assert.equal(resendPreviewFiles.filter((name) => name.startsWith("welcome-")).length, 2);
+    assert.equal(resendPreviewFiles.filter((name) => name.startsWith("email-verification-")).length, 1);
+    assert.equal(resendPreviewFiles.filter((name) => name.startsWith("password-reset-")).length, 1);
 
     const logoutResponse = await fetch(`${baseUrl}/api/logout`, {
       method: "POST",
@@ -678,6 +742,93 @@ async function main() {
     assert.equal(loginData.redirectTo, "/app");
   });
 
+  await withServer({}, async ({ baseUrl, dataDir, emailDir }) => {
+    const legacyPasswordHash = await bcrypt.hash("legacypass123", 12);
+
+    await fs.writeFile(path.join(dataDir, "users.json"), JSON.stringify([
+      {
+        id: "legacy-user",
+        name: "Legacy Reader",
+        email: "legacy@example.com",
+        passwordHash: legacyPasswordHash,
+        createdAt: new Date().toISOString()
+      }
+    ], null, 2));
+
+    const legacyLoginResponse = await fetch(`${baseUrl}/api/login`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        email: "legacy@example.com",
+        password: "legacypass123"
+      })
+    });
+
+    assert.equal(legacyLoginResponse.status, 200);
+    const legacyLoginData = await legacyLoginResponse.json();
+    assert.equal(legacyLoginData.redirectTo, "/verify-email");
+    assert.equal(legacyLoginData.verificationStatus.mode, "preview");
+
+    const legacyCookie = getCookie(legacyLoginResponse);
+    assert.ok(legacyCookie.includes("selah.sid="));
+
+    const legacySessionResponse = await fetch(`${baseUrl}/api/session`, {
+      headers: {
+        Cookie: legacyCookie
+      }
+    });
+    assert.equal(legacySessionResponse.status, 200);
+    const legacySessionData = await legacySessionResponse.json();
+    assert.equal(legacySessionData.authenticated, true);
+    assert.equal(legacySessionData.needsEmailVerification, true);
+    assert.equal(legacySessionData.user.emailVerification.isVerified, false);
+
+    const legacyVerifyPageResponse = await fetch(`${baseUrl}/verify-email`, {
+      headers: {
+        Cookie: legacyCookie
+      }
+    });
+    assert.equal(legacyVerifyPageResponse.status, 200);
+    const legacyVerifyPageHtml = await legacyVerifyPageResponse.text();
+    assert.ok(legacyVerifyPageHtml.includes("Verify your email"));
+
+    const legacyVerificationPreviewFiles = (await fs.readdir(emailDir))
+      .filter((name) => name.startsWith("email-verification-"));
+    assert.equal(legacyVerificationPreviewFiles.length, 1);
+
+    const legacyVerificationPreviewHtml = await fs.readFile(
+      path.join(emailDir, legacyVerificationPreviewFiles[0]),
+      "utf8"
+    );
+    const legacyCodeMatch = legacyVerificationPreviewHtml.match(/Verification code[\s\S]*?>(\d{6})</i);
+    assert.ok(legacyCodeMatch);
+
+    const confirmLegacyEmailResponse = await fetch(`${baseUrl}/api/email/verification/confirm`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Cookie: legacyCookie
+      },
+      body: JSON.stringify({
+        code: legacyCodeMatch[1]
+      })
+    });
+
+    assert.equal(confirmLegacyEmailResponse.status, 200);
+    const confirmLegacyEmailData = await confirmLegacyEmailResponse.json();
+    assert.equal(confirmLegacyEmailData.redirectTo, "/app");
+    assert.equal(confirmLegacyEmailData.user.emailVerification.isVerified, true);
+
+    const legacyAppResponse = await fetch(`${baseUrl}/app`, {
+      headers: {
+        Cookie: legacyCookie
+      }
+    });
+    assert.equal(legacyAppResponse.status, 200);
+  });
+
   await withServer({
     env: {
       SMTP_HOST: "yasumi.yoshida.suzuki@gmail.com",
@@ -702,14 +853,16 @@ async function main() {
     assert.equal(signupResponse.status, 201);
     const signupData = await signupResponse.json();
     assert.equal(signupData.emailStatus.mode, "preview");
-    assert.equal(signupData.redirectTo, "/app");
+    assert.equal(signupData.verificationStatus.mode, "preview");
+    assert.equal(signupData.redirectTo, "/verify-email");
     assert.match(
       signupData.emailStatus.error,
       /SMTP_HOST must be a mail server hostname, not an email address/
     );
 
     const previewFiles = await fs.readdir(emailDir);
-    assert.equal(previewFiles.length, 1);
+    assert.equal(previewFiles.filter((name) => name.startsWith("welcome-")).length, 1);
+    assert.equal(previewFiles.filter((name) => name.startsWith("email-verification-")).length, 1);
   });
 
   await withServer({
@@ -745,14 +898,16 @@ async function main() {
     const elapsedMs = Date.now() - startedAt;
 
     assert.equal(signupResponse.status, 201);
-    assert.equal(elapsedMs < 1500, true);
+    assert.equal(elapsedMs < 3000, true);
 
     const signupData = await signupResponse.json();
     assert.equal(signupData.emailStatus.mode, "preview");
+    assert.equal(signupData.verificationStatus.mode, "preview");
     assert.match(signupData.emailStatus.error, /timed out/i);
 
     const previewFiles = await fs.readdir(emailDir);
-    assert.equal(previewFiles.length, 1);
+    assert.equal(previewFiles.filter((name) => name.startsWith("welcome-")).length, 1);
+    assert.equal(previewFiles.filter((name) => name.startsWith("email-verification-")).length, 1);
   });
 }
 

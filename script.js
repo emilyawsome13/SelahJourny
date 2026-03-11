@@ -35,11 +35,13 @@ const logoutButtons = [
 const siteState = {
   hasUsers: true
 };
+const brandLogoShells = document.querySelectorAll("[data-brand-logo-shell]");
+const brandLogoImages = document.querySelectorAll("[data-brand-logo]");
 
 function updateAuthQuery(mode) {
   const url = new URL(window.location.href);
 
-  if (mode === "login" || mode === "signup" || mode === "recover") {
+  if (["login", "signup", "recover"].includes(mode)) {
     url.searchParams.set("auth", mode);
   } else {
     url.searchParams.delete("auth");
@@ -58,17 +60,19 @@ function setMessage(element, message, tone = "neutral") {
 }
 
 function setAuthMode(mode) {
-  const safeMode = mode === "login" && !siteState.hasUsers ? "signup" : mode;
+  const safeMode = !siteState.hasUsers && mode === "login"
+    ? "signup"
+    : mode;
   const isSignup = safeMode === "signup";
   const isRecover = safeMode === "recover";
   const modeLabel = isSignup
     ? "New account"
     : isRecover
       ? "Recovery"
-      : "Existing member";
+        : "Existing member";
   const modeCopy = isSignup
     ? siteState.hasUsers
-      ? "This flow creates a new Selah account for this live site."
+      ? "This flow creates a new Selah account for this live site and sends a verification code to your email."
       : "This live site does not have any accounts yet, so create the first one here."
     : isRecover
       ? "This flow sends a secure reset link to the email attached to your account."
@@ -108,7 +112,7 @@ function setAuthMode(mode) {
     authFeedback,
     isSignup
       ? siteState.hasUsers
-        ? "Use a real email address so your welcome email can be sent once SMTP is configured."
+        ? "Use a real email address. Selah will send a verification code before your library opens."
         : "This live site does not have any accounts yet. Create the first account here."
       : isRecover
         ? "Enter your account email and Selah will send a secure reset link."
@@ -247,7 +251,7 @@ async function loadSession() {
     siteState.hasUsers = data.hasUsers !== false;
 
     if (data.authenticated && data.user) {
-      window.location.replace("/app");
+      window.location.replace(data.needsEmailVerification ? "/verify-email" : "/app");
       return;
     }
 
@@ -291,9 +295,9 @@ async function handleAuthSubmit(event) {
     const successMessage = mode === "recover"
       ? data.message
       : data.redirectTo
-      ? "Success. Opening your Bible library..."
-      : mode === "signup" && data.emailStatus
-        ? data.emailStatus.message
+      ? data.verificationStatus?.message || data.message || "Success. Opening your Bible library..."
+      : mode === "signup" && data.verificationStatus
+        ? data.verificationStatus.message
         : data.message;
 
     setMessage(authFeedback, successMessage, "success");
@@ -343,6 +347,25 @@ async function handleAuthSubmit(event) {
   } finally {
     submitButton.disabled = false;
   }
+}
+
+function initializeBrandLogo() {
+  if (!brandLogoImages.length) {
+    return;
+  }
+
+  const probe = new Image();
+  probe.onload = () => {
+    brandLogoShells.forEach((shell) => {
+      shell.hidden = false;
+    });
+
+    brandLogoImages.forEach((image) => {
+      image.src = "/assets/selah-logo.png";
+      image.hidden = false;
+    });
+  };
+  probe.src = "/assets/selah-logo.png";
 }
 
 async function handleLogout() {
@@ -469,8 +492,9 @@ if (resendWelcomeEmailButton) {
 }
 
 const initialAuthMode = new URL(window.location.href).searchParams.get("auth");
-if (initialAuthMode === "login" || initialAuthMode === "signup" || initialAuthMode === "recover") {
+if (["login", "signup", "recover"].includes(initialAuthMode)) {
   openAuthModal(initialAuthMode);
 }
 
+initializeBrandLogo();
 loadSession();

@@ -3,6 +3,8 @@ const dashboardMemberName = document.querySelector("#dashboard-member-name");
 const dashboardStatus = document.querySelector("#dashboard-status");
 const dashboardLogout = document.querySelector("#dashboard-logout");
 const dashboardResendEmail = document.querySelector("#dashboard-resend-email");
+const brandLogoShells = document.querySelectorAll("[data-brand-logo-shell]");
+const brandLogoImages = document.querySelectorAll("[data-brand-logo]");
 const tabButtons = Array.from(document.querySelectorAll(".workspace-tab-button[data-tab-target]"));
 const tabPanels = Array.from(document.querySelectorAll("[data-tab-panel]"));
 const tabShortcutButtons = Array.from(document.querySelectorAll("[data-open-tab]"));
@@ -174,6 +176,29 @@ function formatDate(value) {
 
 function redirectToLogin() {
   window.location.replace("/?auth=login");
+}
+
+function redirectToEmailVerification() {
+  window.location.replace("/verify-email");
+}
+
+function initializeBrandLogo() {
+  if (!brandLogoImages.length) {
+    return;
+  }
+
+  const probe = new Image();
+  probe.onload = () => {
+    brandLogoShells.forEach((shell) => {
+      shell.hidden = false;
+    });
+
+    brandLogoImages.forEach((image) => {
+      image.src = "/assets/selah-logo.png";
+      image.hidden = false;
+    });
+  };
+  probe.src = "/assets/selah-logo.png";
 }
 
 function normalizeWorkspaceTab(value) {
@@ -1136,6 +1161,11 @@ async function loadWorkspace() {
       return;
     }
 
+     if (sessionData.needsEmailVerification) {
+      redirectToEmailVerification();
+      return;
+    }
+
     applyUser(sessionData.user);
 
     const results = await Promise.allSettled([
@@ -1158,6 +1188,11 @@ async function loadWorkspace() {
   } catch (error) {
     if (error?.status === 401) {
       redirectToLogin();
+      return;
+    }
+
+    if (error?.status === 403 && error?.message?.toLowerCase().includes("verify your email")) {
+      redirectToEmailVerification();
       return;
     }
 
@@ -1318,4 +1353,5 @@ setGeneratorMode(state.generatorMode);
 renderQuickVerse();
 renderGeneratedVerse();
 renderContextVerse();
+initializeBrandLogo();
 loadWorkspace();

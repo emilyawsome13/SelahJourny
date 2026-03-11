@@ -2,7 +2,7 @@
 
 Selah is a Node/Express Bible library with:
 
-- account signup, login, password reset, and welcome email delivery
+- account signup, login, email verification, password reset, and welcome email delivery
 - Bible books and chapter reading
 - reading plans, saved verses, study notes, and prayer tracking
 - server-backed AI guidance with an optional OpenAI key
@@ -36,6 +36,10 @@ Set these in the Render dashboard before using the app in production:
 Optional:
 
 - `OPENAI_API_KEY`
+
+Branding:
+
+- Drop your logo image at `assets/selah-logo.png` to show it on the landing page and inside account emails.
 
 ### Important storage note
 

@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Selah | Verify Email</title>
+  <meta
+    name="description"
+    content="Verify your Selah email address to finish activating your account."
+  >
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="reset-body">
+  <main class="reset-shell">
+    <section class="reset-card">
+      <a class="brand reset-brand" href="/" aria-label="Back to Selah home">
+        <span class="brand-logo-shell" data-brand-logo-shell hidden>
+          <img class="brand-logo" data-brand-logo alt="Selah logo" hidden>
+        </span>
+        <span class="brand-mark">S</span>
+        <span class="brand-copy">
+          <strong>Selah</strong>
+          <span>Email Verification</span>
+        </span>
+      </a>
+
+      <p class="eyebrow">Account security</p>
+      <h1>Verify your email</h1>
+      <p class="reset-support-copy" id="verify-support-copy">
+        Checking your account session...
+      </p>
+
+      <p class="status-message is-neutral" id="verify-status" aria-live="polite">
+        Loading verification details...
+      </p>
+
+      <form class="reset-form" id="verify-form" hidden>
+        <label class="form-field">
+          <span>Verification code</span>
+          <input type="text" name="code" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" placeholder="123456" required>
+        </label>
+
+        <button class="button button-primary form-submit" type="submit">
+          Verify Email
+        </button>
+      </form>
+
+      <div class="reset-actions">
+        <button class="button button-secondary" id="resend-email-code" type="button" hidden>
+          Send New Code
+        </button>
+        <a class="button button-ghost" href="/login">Back to Login</a>
+      </div>
+    </section>
+  </main>
+
+  <script src="verify-email.js"></script>
+</body>
+</html>

@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Selah | Verify Phone</title>
+  <meta
+    name="description"
+    content="Verify your Selah phone number to finish activating your account."
+  >
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="reset-body">
+  <main class="reset-shell">
+    <section class="reset-card">
+      <a class="brand reset-brand" href="/" aria-label="Back to Selah home">
+        <span class="brand-mark">S</span>
+        <span class="brand-copy">
+          <strong>Selah</strong>
+          <span>Phone Verification</span>
+        </span>
+      </a>
+
+      <p class="eyebrow">Account security</p>
+      <h1>Verify your phone number</h1>
+      <p class="reset-support-copy" id="verify-support-copy">
+        Checking your account session...
+      </p>
+
+      <p class="status-message is-neutral" id="verify-status" aria-live="polite">
+        Loading verification details...
+      </p>
+
+      <form class="reset-form" id="phone-setup-form" hidden>
+        <label class="form-field">
+          <span>Phone number</span>
+          <input type="tel" name="phoneNumber" autocomplete="tel" inputmode="tel" placeholder="(555) 123-4567" required>
+        </label>
+
+        <button class="button button-primary form-submit" type="submit">
+          Send Verification Code
+        </button>
+      </form>
+
+      <form class="reset-form" id="verify-form" hidden>
+        <label class="form-field">
+          <span>Verification code</span>
+          <input type="text" name="code" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" placeholder="123456" required>
+        </label>
+
+        <button class="button button-primary form-submit" type="submit">
+          Verify Phone
+        </button>
+      </form>
+
+      <div class="reset-actions">
+        <button class="button button-secondary" id="resend-phone-code" type="button" hidden>
+          Send New Code
+        </button>
+        <a class="button button-ghost" href="/login">Back to Login</a>
+      </div>
+    </section>
+  </main>
+
+  <script src="verify-phone.js"></script>
+</body>
+</html>
