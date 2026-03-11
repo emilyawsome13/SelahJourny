@@ -34,12 +34,12 @@
         </nav>
 
         <div class="header-auth" id="header-auth">
-          <button class="button button-ghost" type="button" data-open-auth="login" data-guest-only>
+          <a class="button button-ghost" href="/login" data-guest-only>
             Log In
-          </button>
-          <button class="button button-primary" type="button" data-open-auth="signup" data-guest-only>
+          </a>
+          <a class="button button-primary" href="/signup" data-guest-only>
             Create Account
-          </button>
+          </a>
           <span class="member-chip" id="member-chip" hidden>
             <span class="member-dot" aria-hidden="true"></span>
             <span id="member-chip-copy">Guest</span>
@@ -61,9 +61,9 @@
             by topic, testament, book, or chapter. Saved verses and notes stay attached to your account.
           </p>
           <div class="hero-actions">
-            <button class="button button-primary" type="button" data-open-auth="signup" data-guest-only>
+            <a class="button button-primary" href="/signup" data-guest-only>
               Create Free Account
-            </button>
+            </a>
             <a class="button button-secondary" href="#features">See Browser And Generator</a>
           </div>
           <ul class="hero-metrics" aria-label="Product highlights">
@@ -221,12 +221,12 @@
               No one is signed in yet.
             </p>
             <div class="account-actions" id="guest-actions">
-              <button class="button button-primary" type="button" data-open-auth="signup">
+              <a class="button button-primary" href="/signup">
                 Create Account
-              </button>
-              <button class="button button-secondary" type="button" data-open-auth="login">
+              </a>
+              <a class="button button-secondary" href="/login">
                 Log In
-              </button>
+              </a>
             </div>
             <div class="account-actions" id="member-actions" hidden>
               <button class="button button-primary" id="resend-welcome-email" type="button">
@@ -323,29 +323,11 @@
       <p class="eyebrow">Member access</p>
       <h2 id="auth-title">Create your Selah account</h2>
 
-      <div class="auth-tabs" role="tablist" aria-label="Account forms">
-        <button
-          class="auth-tab is-active"
-          id="signup-tab"
-          type="button"
-          role="tab"
-          aria-selected="true"
-          aria-controls="signup-form"
-          data-auth-tab="signup"
-        >
-          Create account
-        </button>
-        <button
-          class="auth-tab"
-          id="login-tab"
-          type="button"
-          role="tab"
-          aria-selected="false"
-          aria-controls="login-form"
-          data-auth-tab="login"
-        >
-          Log in
-        </button>
+      <div class="auth-mode-shell">
+        <p class="auth-mode-label" id="auth-mode-label">New account</p>
+        <p class="auth-support-copy" id="auth-mode-copy">
+          This flow creates a new Selah account for this live site.
+        </p>
       </div>
 
       <p class="status-message is-neutral" id="auth-feedback" aria-live="polite">
@@ -372,6 +354,9 @@
           </label>
         </div>
         <button class="button button-primary form-submit" type="submit">Create Account</button>
+        <button class="auth-link" type="button" data-auth-switch="login">
+          Already have an account? Log In
+        </button>
       </form>
 
       <form class="auth-form" id="login-form" data-auth-form="login" hidden>

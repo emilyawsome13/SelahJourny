@@ -1283,6 +1283,23 @@ h3 {
   background: linear-gradient(180deg, rgba(255, 251, 245, 0.96) 0%, rgba(244, 235, 220, 0.98) 100%);
 }
 
+.auth-mode-shell {
+  margin-top: 1rem;
+  padding: 1rem 1.05rem;
+  border: 1px solid rgba(108, 92, 72, 0.14);
+  border-radius: 22px;
+  background: rgba(255, 250, 241, 0.66);
+}
+
+.auth-mode-label {
+  margin: 0;
+  color: var(--forest);
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
 .modal-close {
   position: absolute;
   top: 1rem;

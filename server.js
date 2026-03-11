@@ -1777,6 +1777,33 @@ function createApp(options = {}) {
     }
   });
 
+  app.get("/signup", async (request, response, next) => {
+    try {
+      const { user } = await findSessionUser(request);
+      response.redirect(user ? "/app" : "/?auth=signup");
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.get("/login", async (request, response, next) => {
+    try {
+      const { user } = await findSessionUser(request);
+      response.redirect(user ? "/app" : "/?auth=login");
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.get("/recover", async (request, response, next) => {
+    try {
+      const { user } = await findSessionUser(request);
+      response.redirect(user ? "/app" : "/?auth=recover");
+    } catch (error) {
+      next(error);
+    }
+  });
+
   app.get("/app", async (request, response, next) => {
     try {
       const { user } = await findSessionUser(request);

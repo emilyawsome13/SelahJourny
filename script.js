@@ -4,6 +4,8 @@ const revealElements = document.querySelectorAll(".reveal");
 const authModal = document.querySelector("#auth-modal");
 const authFeedback = document.querySelector("#auth-feedback");
 const authTitle = document.querySelector("#auth-title");
+const authModeLabel = document.querySelector("#auth-mode-label");
+const authModeCopy = document.querySelector("#auth-mode-copy");
 const authTabsContainer = document.querySelector(".auth-tabs");
 const authTabs = document.querySelectorAll("[data-auth-tab]");
 const authForms = {
@@ -59,12 +61,34 @@ function setAuthMode(mode) {
   const safeMode = mode === "login" && !siteState.hasUsers ? "signup" : mode;
   const isSignup = safeMode === "signup";
   const isRecover = safeMode === "recover";
+  const modeLabel = isSignup
+    ? "New account"
+    : isRecover
+      ? "Recovery"
+      : "Existing member";
+  const modeCopy = isSignup
+    ? siteState.hasUsers
+      ? "This flow creates a new Selah account for this live site."
+      : "This live site does not have any accounts yet, so create the first one here."
+    : isRecover
+      ? "This flow sends a secure reset link to the email attached to your account."
+      : siteState.hasUsers
+        ? "This flow only signs into an account that already exists on this live site."
+        : "Login is not available until the first live account is created.";
 
   authTitle.textContent = isSignup
     ? "Create your Selah account"
     : isRecover
-      ? "Recover your Selah account"
-      : "Welcome back to Selah";
+      ? "Reset your Selah password"
+      : "Log in to your Selah account";
+
+  if (authModeLabel) {
+    authModeLabel.textContent = modeLabel;
+  }
+
+  if (authModeCopy) {
+    authModeCopy.textContent = modeCopy;
+  }
 
   if (authTabsContainer) {
     authTabsContainer.hidden = isRecover;

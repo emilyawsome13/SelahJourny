@@ -67,6 +67,9 @@ async function main() {
     assert.ok(homeHtml.includes("auth-modal"));
     assert.ok(homeHtml.includes("Forgot your password?"));
     assert.ok(homeHtml.includes("Need an account on this site? Create one"));
+    assert.ok(homeHtml.includes('href="/login"'));
+    assert.ok(homeHtml.includes('href="/signup"'));
+    assert.ok(homeHtml.includes("This flow creates a new Selah account for this live site."));
 
     const stylesResponse = await fetch(`${baseUrl}/styles.css`);
     assert.equal(stylesResponse.status, 200);
@@ -78,6 +81,18 @@ async function main() {
     });
     assert.equal(appRedirectResponse.status, 302);
     assert.equal(appRedirectResponse.headers.get("location"), "/?auth=login");
+
+    const loginRouteResponse = await fetch(`${baseUrl}/login`, {
+      redirect: "manual"
+    });
+    assert.equal(loginRouteResponse.status, 302);
+    assert.equal(loginRouteResponse.headers.get("location"), "/?auth=login");
+
+    const signupRouteResponse = await fetch(`${baseUrl}/signup`, {
+      redirect: "manual"
+    });
+    assert.equal(signupRouteResponse.status, 302);
+    assert.equal(signupRouteResponse.headers.get("location"), "/?auth=signup");
 
     const guestSessionResponse = await fetch(`${baseUrl}/api/session`);
     assert.equal(guestSessionResponse.status, 200);
