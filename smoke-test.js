@@ -66,6 +66,7 @@ async function main() {
     assert.ok(homeHtml.includes("Create your Selah account"));
     assert.ok(homeHtml.includes("auth-modal"));
     assert.ok(homeHtml.includes("Forgot your password?"));
+    assert.ok(homeHtml.includes("Need an account on this site? Create one"));
 
     const stylesResponse = await fetch(`${baseUrl}/styles.css`);
     assert.equal(stylesResponse.status, 200);
@@ -77,6 +78,26 @@ async function main() {
     });
     assert.equal(appRedirectResponse.status, 302);
     assert.equal(appRedirectResponse.headers.get("location"), "/?auth=login");
+
+    const guestSessionResponse = await fetch(`${baseUrl}/api/session`);
+    assert.equal(guestSessionResponse.status, 200);
+    const guestSessionData = await guestSessionResponse.json();
+    assert.equal(guestSessionData.authenticated, false);
+    assert.equal(guestSessionData.hasUsers, false);
+
+    const failedLoginBeforeSignupResponse = await fetch(`${baseUrl}/api/login`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        email: "esther@example.com",
+        password: "strongpass123"
+      })
+    });
+    assert.equal(failedLoginBeforeSignupResponse.status, 401);
+    const failedLoginBeforeSignupData = await failedLoginBeforeSignupResponse.json();
+    assert.equal(failedLoginBeforeSignupData.hasUsers, false);
 
     const signupResponse = await fetch(`${baseUrl}/api/signup`, {
       method: "POST",

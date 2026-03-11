@@ -30,6 +30,9 @@ const logoutButtons = [
   document.querySelector("#account-logout"),
   document.querySelector("#header-logout")
 ].filter(Boolean);
+const siteState = {
+  hasUsers: true
+};
 
 function updateAuthQuery(mode) {
   const url = new URL(window.location.href);
@@ -53,8 +56,9 @@ function setMessage(element, message, tone = "neutral") {
 }
 
 function setAuthMode(mode) {
-  const isSignup = mode === "signup";
-  const isRecover = mode === "recover";
+  const safeMode = mode === "login" && !siteState.hasUsers ? "signup" : mode;
+  const isSignup = safeMode === "signup";
+  const isRecover = safeMode === "recover";
 
   authTitle.textContent = isSignup
     ? "Create your Selah account"
@@ -67,33 +71,38 @@ function setAuthMode(mode) {
   }
 
   authTabs.forEach((tab) => {
-    const isActive = !isRecover && tab.dataset.authTab === mode;
+    const isActive = !isRecover && tab.dataset.authTab === safeMode;
     tab.classList.toggle("is-active", isActive);
     tab.setAttribute("aria-selected", String(isActive));
   });
 
   Object.entries(authForms).forEach(([formMode, form]) => {
-    form.hidden = formMode !== mode;
+    form.hidden = formMode !== safeMode;
   });
 
   setMessage(
     authFeedback,
     isSignup
-      ? "Use a real email address so your welcome email can be sent once SMTP is configured."
+      ? siteState.hasUsers
+        ? "Use a real email address so your welcome email can be sent once SMTP is configured."
+        : "This live site does not have any accounts yet. Create the first account here."
       : isRecover
         ? "Enter your account email and Selah will send a secure reset link."
-        : "Enter the email and password you used when creating your account.",
+        : siteState.hasUsers
+          ? "Enter the email and password you used when creating your account."
+          : "No accounts exist on this deployment yet. Create one first.",
     "neutral"
   );
 }
 
 function openAuthModal(mode = "signup") {
-  setAuthMode(mode);
-  updateAuthQuery(mode);
+  const safeMode = mode === "login" && !siteState.hasUsers ? "signup" : mode;
+  setAuthMode(safeMode);
+  updateAuthQuery(safeMode);
   authModal.hidden = false;
   document.body.classList.add("modal-open");
 
-  const firstInput = authForms[mode]?.querySelector("input");
+  const firstInput = authForms[safeMode]?.querySelector("input");
   if (firstInput) {
     firstInput.focus();
   }
@@ -134,12 +143,14 @@ function getMemberStatus(user) {
 }
 
 function updateGuestView(message = "No one is signed in yet.", tone = "neutral") {
-  accountHeading.textContent = "Create your Selah account";
-  accountCopy.textContent =
-    "Sign up to unlock the Bible browser. This is where books, generated verses, notes, and guided history can persist.";
-  previewTitle.textContent = "Member library included";
-  previewCopy.textContent =
-    "Create an account to keep your verse library, study notes, generated verses, and AI guidance in one place.";
+  accountHeading.textContent = siteState.hasUsers ? "Create your Selah account" : "Create the first Selah account";
+  accountCopy.textContent = siteState.hasUsers
+    ? "Sign up to unlock the Bible browser. This is where books, generated verses, notes, and guided history can persist."
+    : "This deployment does not have any member accounts yet. Create one here to unlock the Bible browser and save your own library.";
+  previewTitle.textContent = siteState.hasUsers ? "Member library included" : "Fresh live deployment";
+  previewCopy.textContent = siteState.hasUsers
+    ? "Create an account to keep your verse library, study notes, generated verses, and AI guidance in one place."
+    : "Local accounts do not automatically exist on this live site. Create your account here to start using the deployed version.";
 
   guestActions.hidden = false;
   memberActions.hidden = true;
@@ -194,7 +205,10 @@ async function requestJson(url, options = {}) {
   const data = await response.json().catch(() => ({}));
 
   if (!response.ok) {
-    throw new Error(data.message || "Request failed.");
+    const error = new Error(data.message || "Request failed.");
+    error.status = response.status;
+    error.data = data;
+    throw error;
   }
 
   return data;
@@ -205,6 +219,8 @@ async function loadSession() {
     const data = await requestJson("/api/session", {
       headers: {}
     });
+
+    siteState.hasUsers = data.hasUsers !== false;
 
     if (data.authenticated && data.user) {
       window.location.replace("/app");
@@ -244,6 +260,10 @@ async function handleAuthSubmit(event) {
       body: JSON.stringify(payload)
     });
 
+    if (mode === "signup") {
+      siteState.hasUsers = true;
+    }
+
     const successMessage = mode === "recover"
       ? data.message
       : data.redirectTo
@@ -272,6 +292,29 @@ async function handleAuthSubmit(event) {
 
     closeAuthModal();
   } catch (error) {
+    if (mode === "login" && error.status === 401) {
+      siteState.hasUsers = error.data?.hasUsers !== false;
+
+      if (!siteState.hasUsers) {
+        setAuthMode("signup");
+        updateAuthQuery("signup");
+        setMessage(
+          authFeedback,
+          "This live site does not have an account database yet. Create your account on this deployment first.",
+          "error"
+        );
+        updateGuestView(authFeedback.textContent, "error");
+        return;
+      }
+
+      setMessage(
+        authFeedback,
+        "That email or password did not match this live site. If your account was only created locally, create it here instead, or use Forgot your password.",
+        "error"
+      );
+      return;
+    }
+
     setMessage(authFeedback, error.message, "error");
   } finally {
     submitButton.disabled = false;

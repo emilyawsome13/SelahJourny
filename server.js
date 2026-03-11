@@ -1815,9 +1815,13 @@ function createApp(options = {}) {
   app.get("/api/session", async (request, response, next) => {
     try {
       const { user } = await findSessionUser(request);
+      const users = await storage.readUsers();
 
       if (!user) {
-        response.json({ authenticated: false });
+        response.json({
+          authenticated: false,
+          hasUsers: users.length > 0
+        });
         return;
       }
 
@@ -2385,14 +2389,20 @@ function createApp(options = {}) {
       const user = users.find((entry) => entry.email === email);
 
       if (!user) {
-        response.status(401).json({ message: "Invalid email or password." });
+        response.status(401).json({
+          message: "Invalid email or password.",
+          hasUsers: users.length > 0
+        });
         return;
       }
 
       const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
 
       if (!isPasswordValid) {
-        response.status(401).json({ message: "Invalid email or password." });
+        response.status(401).json({
+          message: "Invalid email or password.",
+          hasUsers: users.length > 0
+        });
         return;
       }
 
