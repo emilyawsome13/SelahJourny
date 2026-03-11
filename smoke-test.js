@@ -21,6 +21,7 @@ async function withServer(options, callback) {
     rootDir: __dirname,
     dataDir,
     emailDir,
+    transportFactory: options?.transportFactory,
     env: {
       PORT: "0",
       SESSION_SECRET: "test-secret",
@@ -54,7 +55,7 @@ async function withServer(options, callback) {
 }
 
 async function main() {
-  await withServer({}, async ({ baseUrl, emailDir }) => {
+  await withServer({}, async ({ baseUrl, dataDir, emailDir }) => {
     const healthResponse = await fetch(`${baseUrl}/healthz`);
     assert.equal(healthResponse.status, 200);
     const healthData = await healthResponse.json();
@@ -93,6 +94,8 @@ async function main() {
     });
     assert.equal(signupRouteResponse.status, 302);
     assert.equal(signupRouteResponse.headers.get("location"), "/?auth=signup");
+
+    await fs.writeFile(path.join(dataDir, "users.json"), "{not-valid-json", "utf8");
 
     const guestSessionResponse = await fetch(`${baseUrl}/api/session`);
     assert.equal(guestSessionResponse.status, 200);
@@ -704,6 +707,49 @@ async function main() {
       signupData.emailStatus.error,
       /SMTP_HOST must be a mail server hostname, not an email address/
     );
+
+    const previewFiles = await fs.readdir(emailDir);
+    assert.equal(previewFiles.length, 1);
+  });
+
+  await withServer({
+    env: {
+      SMTP_HOST: "smtp.gmail.com",
+      SMTP_PORT: "587",
+      SMTP_SECURE: "false",
+      SMTP_USER: "slow@example.com",
+      SMTP_PASS: "example-app-password",
+      EMAIL_DELIVERY_TIMEOUT_MS: "25"
+    },
+    transportFactory: () => ({
+      verify() {
+        return new Promise(() => {});
+      },
+      sendMail() {
+        return new Promise(() => {});
+      }
+    })
+  }, async ({ baseUrl, emailDir }) => {
+    const startedAt = Date.now();
+    const signupResponse = await fetch(`${baseUrl}/api/signup`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        name: "Deborah",
+        email: "deborah@example.com",
+        password: "strongpass123"
+      })
+    });
+    const elapsedMs = Date.now() - startedAt;
+
+    assert.equal(signupResponse.status, 201);
+    assert.equal(elapsedMs < 1500, true);
+
+    const signupData = await signupResponse.json();
+    assert.equal(signupData.emailStatus.mode, "preview");
+    assert.match(signupData.emailStatus.error, /timed out/i);
 
     const previewFiles = await fs.readdir(emailDir);
     assert.equal(previewFiles.length, 1);

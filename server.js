@@ -1345,76 +1345,88 @@ function createStorage({
     }
   }
 
-  async function readUsers() {
+  async function readJsonArrayFile(filePath) {
     await ensureInitialized();
-    const raw = await fs.readFile(usersFile, "utf8");
-    const parsed = JSON.parse(raw || "[]");
+    const raw = await fs.readFile(filePath, "utf8");
+    const trimmed = raw.trim();
+
+    if (!trimmed) {
+      return [];
+    }
+
+    try {
+      const parsed = JSON.parse(trimmed);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      const corruptFilePath = `${filePath}.corrupt-${Date.now()}`;
+
+      try {
+        await fs.rename(filePath, corruptFilePath);
+      } catch {
+        // If the backup rename fails, continue by restoring a clean file.
+      }
+
+      await fs.writeFile(filePath, "[]\n", "utf8");
+      return [];
+    }
+  }
+
+  async function writeJsonFileAtomic(filePath, value) {
+    await ensureInitialized();
+    const tempFilePath = `${filePath}.${crypto.randomUUID()}.tmp`;
+    const json = `${JSON.stringify(value, null, 2)}\n`;
+
+    await fs.writeFile(tempFilePath, json, "utf8");
+    await fs.rename(tempFilePath, filePath);
+  }
+
+  async function readUsers() {
+    const parsed = await readJsonArrayFile(usersFile);
     return Array.isArray(parsed) ? parsed.map(hydrateUserRecord) : [];
   }
 
   async function writeUsers(users) {
-    await ensureInitialized();
-    await fs.writeFile(usersFile, `${JSON.stringify(users.map(hydrateUserRecord), null, 2)}\n`, "utf8");
+    await writeJsonFileAtomic(usersFile, users.map(hydrateUserRecord));
   }
 
   async function readPrayers() {
-    await ensureInitialized();
-    const raw = await fs.readFile(prayersFile, "utf8");
-    const parsed = JSON.parse(raw || "[]");
-    return Array.isArray(parsed) ? parsed : [];
+    return readJsonArrayFile(prayersFile);
   }
 
   async function writePrayers(prayers) {
-    await ensureInitialized();
-    await fs.writeFile(prayersFile, `${JSON.stringify(prayers, null, 2)}\n`, "utf8");
+    await writeJsonFileAtomic(prayersFile, prayers);
   }
 
   async function readCheckins() {
-    await ensureInitialized();
-    const raw = await fs.readFile(checkinsFile, "utf8");
-    const parsed = JSON.parse(raw || "[]");
-    return Array.isArray(parsed) ? parsed : [];
+    return readJsonArrayFile(checkinsFile);
   }
 
   async function writeCheckins(checkins) {
-    await ensureInitialized();
-    await fs.writeFile(checkinsFile, `${JSON.stringify(checkins, null, 2)}\n`, "utf8");
+    await writeJsonFileAtomic(checkinsFile, checkins);
   }
 
   async function readAiSessions() {
-    await ensureInitialized();
-    const raw = await fs.readFile(aiSessionsFile, "utf8");
-    const parsed = JSON.parse(raw || "[]");
-    return Array.isArray(parsed) ? parsed : [];
+    return readJsonArrayFile(aiSessionsFile);
   }
 
   async function writeAiSessions(aiSessions) {
-    await ensureInitialized();
-    await fs.writeFile(aiSessionsFile, `${JSON.stringify(aiSessions, null, 2)}\n`, "utf8");
+    await writeJsonFileAtomic(aiSessionsFile, aiSessions);
   }
 
   async function readSavedVerses() {
-    await ensureInitialized();
-    const raw = await fs.readFile(savedVersesFile, "utf8");
-    const parsed = JSON.parse(raw || "[]");
-    return Array.isArray(parsed) ? parsed : [];
+    return readJsonArrayFile(savedVersesFile);
   }
 
   async function writeSavedVerses(savedVerses) {
-    await ensureInitialized();
-    await fs.writeFile(savedVersesFile, `${JSON.stringify(savedVerses, null, 2)}\n`, "utf8");
+    await writeJsonFileAtomic(savedVersesFile, savedVerses);
   }
 
   async function readStudyNotes() {
-    await ensureInitialized();
-    const raw = await fs.readFile(studyNotesFile, "utf8");
-    const parsed = JSON.parse(raw || "[]");
-    return Array.isArray(parsed) ? parsed : [];
+    return readJsonArrayFile(studyNotesFile);
   }
 
   async function writeStudyNotes(studyNotes) {
-    await ensureInitialized();
-    await fs.writeFile(studyNotesFile, `${JSON.stringify(studyNotes, null, 2)}\n`, "utf8");
+    await writeJsonFileAtomic(studyNotesFile, studyNotes);
   }
 
   async function saveEmailPreview({ prefix = "email", email, subject, html }) {
@@ -1451,8 +1463,28 @@ function createStorage({
   };
 }
 
-function createMailer({ env, storage }) {
+function createMailer({ env, storage, transportFactory = nodemailer.createTransport }) {
   let transporterPromise = null;
+  const emailDeliveryTimeoutMs = Math.max(
+    1000,
+    Number.parseInt(String(env.EMAIL_DELIVERY_TIMEOUT_MS || "5000"), 10) || 5000
+  );
+
+  function withEmailTimeout(promise, operationLabel) {
+    let timeoutHandle = null;
+
+    const timeoutPromise = new Promise((resolve, reject) => {
+      timeoutHandle = setTimeout(() => {
+        reject(new Error(`${operationLabel} timed out after ${emailDeliveryTimeoutMs}ms.`));
+      }, emailDeliveryTimeoutMs);
+    });
+
+    return Promise.race([promise, timeoutPromise]).finally(() => {
+      if (timeoutHandle) {
+        clearTimeout(timeoutHandle);
+      }
+    });
+  }
 
   function validateSmtpConfig() {
     const smtpHost = String(env.SMTP_HOST || "").trim();
@@ -1500,17 +1532,20 @@ function createMailer({ env, storage }) {
     validateSmtpConfig();
 
     if (!transporterPromise) {
-      const transporter = nodemailer.createTransport({
+      const transporter = transportFactory({
         host: env.SMTP_HOST,
         port: Number(env.SMTP_PORT),
         secure: String(env.SMTP_SECURE).toLowerCase() === "true" || Number(env.SMTP_PORT) === 465,
+        connectionTimeout: emailDeliveryTimeoutMs,
+        greetingTimeout: emailDeliveryTimeoutMs,
+        socketTimeout: emailDeliveryTimeoutMs,
         auth: {
           user: env.SMTP_USER,
           pass: env.SMTP_PASS
         }
       });
 
-      transporterPromise = transporter.verify()
+      transporterPromise = withEmailTimeout(transporter.verify(), "SMTP verification")
         .then(() => transporter)
         .catch((error) => {
           transporterPromise = null;
@@ -1557,7 +1592,7 @@ function createMailer({ env, storage }) {
         };
       }
 
-      const info = await transporter.sendMail(message);
+      const info = await withEmailTimeout(transporter.sendMail(message), "Email delivery");
       return {
         mode: "smtp",
         message: onSentMessage(),
@@ -1656,7 +1691,11 @@ function createApp(options = {}) {
     savedVersesFile,
     studyNotesFile
   });
-  const mailer = createMailer({ env, storage });
+  const mailer = createMailer({
+    env,
+    storage,
+    transportFactory: options.transportFactory
+  });
   const app = express();
 
   if (String(env.NODE_ENV || "").toLowerCase() === "production" && !sessionSecret) {
