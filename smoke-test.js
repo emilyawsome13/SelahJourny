@@ -870,6 +870,43 @@ async function main() {
       SMTP_HOST: "smtp.gmail.com",
       SMTP_PORT: "587",
       SMTP_SECURE: "false",
+      SMTP_USER: "gmail-style@example.com",
+      SMTP_PASS: "abcd efgh ijkl mnop"
+    },
+    transportFactory: (config) => ({
+      verify() {
+        assert.equal(config.auth.pass, "abcdefghijklmnop");
+        return Promise.resolve();
+      },
+      sendMail() {
+        assert.equal(config.auth.pass, "abcdefghijklmnop");
+        return Promise.resolve({ messageId: "smtp-ok" });
+      }
+    })
+  }, async ({ baseUrl }) => {
+    const signupResponse = await fetch(`${baseUrl}/api/signup`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        name: "Hannah",
+        email: "hannah@example.com",
+        password: "strongpass123"
+      })
+    });
+
+    assert.equal(signupResponse.status, 201);
+    const signupData = await signupResponse.json();
+    assert.equal(signupData.emailStatus.mode, "smtp");
+    assert.equal(signupData.verificationStatus.mode, "smtp");
+  });
+
+  await withServer({
+    env: {
+      SMTP_HOST: "smtp.gmail.com",
+      SMTP_PORT: "587",
+      SMTP_SECURE: "false",
       SMTP_USER: "slow@example.com",
       SMTP_PASS: "example-app-password",
       EMAIL_DELIVERY_TIMEOUT_MS: "25"

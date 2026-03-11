@@ -35,6 +35,14 @@ function isValidEmail(value) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 }
 
+function normalizeSmtpPassword(env) {
+  const host = String(env.SMTP_HOST || "").trim().toLowerCase();
+  const rawPassword = String(env.SMTP_PASS || "");
+  const isGmailSmtp = host === "smtp.gmail.com" || host === "smtp-relay.gmail.com";
+
+  return isGmailSmtp ? rawPassword.replace(/\s+/g, "") : rawPassword;
+}
+
 function buildWelcomeEmailRecord(emailStatus) {
   return {
     mode: emailStatus.mode,
@@ -1774,7 +1782,7 @@ function createMailer({ env, storage, rootDir, transportFactory = nodemailer.cre
         socketTimeout: emailDeliveryTimeoutMs,
         auth: {
           user: env.SMTP_USER,
-          pass: env.SMTP_PASS
+          pass: normalizeSmtpPassword(env)
         }
       });
 
