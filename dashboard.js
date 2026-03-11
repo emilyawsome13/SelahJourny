@@ -3,6 +3,11 @@ const dashboardMemberName = document.querySelector("#dashboard-member-name");
 const dashboardStatus = document.querySelector("#dashboard-status");
 const dashboardLogout = document.querySelector("#dashboard-logout");
 const dashboardResendEmail = document.querySelector("#dashboard-resend-email");
+const settingsMenuTrigger = document.querySelector("#settings-menu-trigger");
+const settingsModal = document.querySelector("#settings-modal");
+const settingsCloseButtons = Array.from(document.querySelectorAll("[data-close-settings]"));
+const settingsMenuButtons = Array.from(document.querySelectorAll("[data-settings-menu]"));
+const settingsMenuPanels = Array.from(document.querySelectorAll("[data-settings-panel]"));
 const brandLogoShells = document.querySelectorAll("[data-brand-logo-shell]");
 const brandLogoImages = document.querySelectorAll("[data-brand-logo]");
 const tabButtons = Array.from(document.querySelectorAll(".workspace-tab-button[data-tab-target]"));
@@ -120,6 +125,7 @@ const generatorModeLabels = {
 };
 
 const workspaceTabs = tabPanels.map((panel) => panel.dataset.tabPanel).filter(Boolean);
+const settingsMenus = settingsMenuPanels.map((panel) => panel.dataset.settingsPanel).filter(Boolean);
 
 const state = {
   user: null,
@@ -141,8 +147,11 @@ const state = {
   quickGeneratorOffset: 0,
   savedVerses: [],
   studyNotes: [],
-  activeTab: "overview"
+  activeTab: "overview",
+  activeSettingsMenu: "preferences"
 };
+
+let settingsFocusTarget = null;
 
 function escapeHtml(value) {
   return String(value || "")
@@ -178,10 +187,6 @@ function redirectToLogin() {
   window.location.replace("/?auth=login");
 }
 
-function redirectToEmailVerification() {
-  window.location.replace("/verify-email");
-}
-
 function initializeBrandLogo() {
   if (!brandLogoImages.length) {
     return;
@@ -212,6 +217,14 @@ function normalizeWorkspaceTab(value) {
 
 function getPreferredStartTab() {
   return normalizeWorkspaceTab(state.user?.settings?.startTab) || "browser";
+}
+
+function normalizeSettingsMenu(value) {
+  const panelId = String(value || "")
+    .trim()
+    .toLowerCase();
+
+  return settingsMenus.includes(panelId) ? panelId : "preferences";
 }
 
 function setActiveTab(tabId, options = {}) {
@@ -245,6 +258,61 @@ function setActiveTab(tabId, options = {}) {
   }
 }
 
+function setActiveSettingsMenu(menuId) {
+  const nextMenu = normalizeSettingsMenu(menuId);
+  state.activeSettingsMenu = nextMenu;
+
+  settingsMenuButtons.forEach((button) => {
+    const isActive = button.dataset.settingsMenu === nextMenu;
+    button.classList.toggle("is-active", isActive);
+    button.setAttribute("aria-selected", String(isActive));
+    button.tabIndex = isActive ? 0 : -1;
+  });
+
+  settingsMenuPanels.forEach((panel) => {
+    const isActive = panel.dataset.settingsPanel === nextMenu;
+    panel.hidden = !isActive;
+    panel.classList.toggle("is-active", isActive);
+  });
+}
+
+function openSettingsModal(menuId = state.activeSettingsMenu || "preferences") {
+  if (!settingsModal) {
+    return;
+  }
+
+  settingsFocusTarget = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+  setActiveSettingsMenu(menuId);
+  settingsModal.hidden = false;
+  document.body.classList.add("modal-open");
+
+  if (settingsMenuTrigger) {
+    settingsMenuTrigger.setAttribute("aria-expanded", "true");
+  }
+
+  const activeButton = settingsMenuButtons.find((button) => button.dataset.settingsMenu === state.activeSettingsMenu);
+  activeButton?.focus();
+}
+
+function closeSettingsModal() {
+  if (!settingsModal || settingsModal.hidden) {
+    return;
+  }
+
+  settingsModal.hidden = true;
+  document.body.classList.remove("modal-open");
+
+  if (settingsMenuTrigger) {
+    settingsMenuTrigger.setAttribute("aria-expanded", "false");
+  }
+
+  if (settingsFocusTarget instanceof HTMLElement) {
+    settingsFocusTarget.focus();
+  } else {
+    settingsMenuTrigger?.focus();
+  }
+}
+
 function handleTabKeydown(event) {
   const currentIndex = tabButtons.findIndex((button) => button === event.currentTarget);
 
@@ -270,6 +338,33 @@ function handleTabKeydown(event) {
   const nextButton = tabButtons[nextIndex];
   nextButton.focus();
   setActiveTab(nextButton.dataset.tabTarget);
+}
+
+function handleSettingsMenuKeydown(event) {
+  const currentIndex = settingsMenuButtons.findIndex((button) => button === event.currentTarget);
+
+  if (currentIndex < 0) {
+    return;
+  }
+
+  let nextIndex = currentIndex;
+
+  if (event.key === "ArrowRight") {
+    nextIndex = (currentIndex + 1) % settingsMenuButtons.length;
+  } else if (event.key === "ArrowLeft") {
+    nextIndex = (currentIndex - 1 + settingsMenuButtons.length) % settingsMenuButtons.length;
+  } else if (event.key === "Home") {
+    nextIndex = 0;
+  } else if (event.key === "End") {
+    nextIndex = settingsMenuButtons.length - 1;
+  } else {
+    return;
+  }
+
+  event.preventDefault();
+  const nextButton = settingsMenuButtons[nextIndex];
+  nextButton.focus();
+  setActiveSettingsMenu(nextButton.dataset.settingsMenu);
 }
 
 function getBookMeta(bookId) {
@@ -1192,6 +1287,18 @@ async function loadWorkspace() {
 
 dashboardLogout.addEventListener("click", handleDashboardLogout);
 dashboardResendEmail.addEventListener("click", handleResendEmail);
+settingsMenuTrigger?.addEventListener("click", () => {
+  openSettingsModal("preferences");
+});
+settingsCloseButtons.forEach((button) => {
+  button.addEventListener("click", closeSettingsModal);
+});
+settingsMenuButtons.forEach((button) => {
+  button.addEventListener("click", () => {
+    setActiveSettingsMenu(button.dataset.settingsMenu);
+  });
+  button.addEventListener("keydown", handleSettingsMenuKeydown);
+});
 tabButtons.forEach((button) => {
   button.addEventListener("click", () => {
     setActiveTab(button.dataset.tabTarget);
@@ -1208,6 +1315,11 @@ window.addEventListener("hashchange", () => {
 
   if (requestedTab) {
     setActiveTab(requestedTab, { updateHash: false });
+  }
+});
+window.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && settingsModal && !settingsModal.hidden) {
+    closeSettingsModal();
   }
 });
 
@@ -1340,6 +1452,7 @@ settingsForm.addEventListener("submit", handleSettingsSubmit);
 passwordForm.addEventListener("submit", handlePasswordSubmit);
 
 setGeneratorMode(state.generatorMode);
+setActiveSettingsMenu(state.activeSettingsMenu);
 renderQuickVerse();
 renderGeneratedVerse();
 renderContextVerse();

@@ -525,8 +525,7 @@ const WORKSPACE_TABS = new Set([
   "overview",
   "browser",
   "generator",
-  "library",
-  "account"
+  "library"
 ]);
 
 const VERSE_GENERATOR_MODES = new Set([

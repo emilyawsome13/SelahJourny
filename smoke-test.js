@@ -185,7 +185,8 @@ async function main() {
     assert.ok(appHtml.includes("Continue Reading"));
     assert.ok(appHtml.includes("Generate Verse"));
     assert.ok(appHtml.includes("Your verse library"));
-    assert.ok(appHtml.includes("Your account"));
+    assert.ok(appHtml.includes("Manage your Selah setup"));
+    assert.ok(appHtml.includes("Settings"));
     assert.ok(appHtml.includes("workspace-tab-button"));
     assert.ok(appHtml.includes("Workspace settings"));
 

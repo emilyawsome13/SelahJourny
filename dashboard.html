@@ -24,65 +24,65 @@
         </span>
       </a>
 
-      <nav class="site-nav workspace-nav" aria-label="Selah sections" role="tablist">
+      <nav class="site-nav workspace-nav" aria-label="Selah sections">
+        <div class="workspace-tablist" role="tablist">
+          <button
+            class="workspace-tab-button is-active"
+            type="button"
+            data-tab-target="overview"
+            role="tab"
+            id="tab-trigger-overview"
+            aria-controls="overview"
+            aria-selected="true"
+          >
+            Overview
+          </button>
+          <button
+            class="workspace-tab-button"
+            type="button"
+            data-tab-target="browser"
+            role="tab"
+            id="tab-trigger-browser"
+            aria-controls="browser"
+            aria-selected="false"
+            tabindex="-1"
+          >
+            Browser
+          </button>
+          <button
+            class="workspace-tab-button"
+            type="button"
+            data-tab-target="generator"
+            role="tab"
+            id="tab-trigger-generator"
+            aria-controls="generator"
+            aria-selected="false"
+            tabindex="-1"
+          >
+            Generator
+          </button>
+          <button
+            class="workspace-tab-button"
+            type="button"
+            data-tab-target="library"
+            role="tab"
+            id="tab-trigger-library"
+            aria-controls="library"
+            aria-selected="false"
+            tabindex="-1"
+          >
+            Library
+          </button>
+        </div>
         <button
-          class="workspace-tab-button is-active"
+          class="workspace-tab-button workspace-settings-trigger"
           type="button"
-          data-tab-target="overview"
-          role="tab"
-          id="tab-trigger-overview"
-          aria-controls="overview"
-          aria-selected="true"
+          id="settings-menu-trigger"
+          aria-haspopup="dialog"
+          aria-controls="settings-modal"
+          aria-expanded="false"
         >
-          Overview
-        </button>
-        <button
-          class="workspace-tab-button"
-          type="button"
-          data-tab-target="browser"
-          role="tab"
-          id="tab-trigger-browser"
-          aria-controls="browser"
-          aria-selected="false"
-          tabindex="-1"
-        >
-          Browser
-        </button>
-        <button
-          class="workspace-tab-button"
-          type="button"
-          data-tab-target="generator"
-          role="tab"
-          id="tab-trigger-generator"
-          aria-controls="generator"
-          aria-selected="false"
-          tabindex="-1"
-        >
-          Generator
-        </button>
-        <button
-          class="workspace-tab-button"
-          type="button"
-          data-tab-target="library"
-          role="tab"
-          id="tab-trigger-library"
-          aria-controls="library"
-          aria-selected="false"
-          tabindex="-1"
-        >
-          Library
-        </button>
-        <button
-          class="workspace-tab-button"
-          type="button"
-          data-tab-target="account"
-          role="tab"
-          id="tab-trigger-account"
-          aria-controls="account"
-          aria-selected="false"
-          tabindex="-1"
-        >
-          Account
+          Settings
         </button>
       </nav>
 
@@ -485,185 +485,247 @@
         </div>
       </section>
 
-      <section
-        class="section dashboard-tab-panel"
-        id="account"
-        data-tab-panel="account"
-        role="tabpanel"
-        aria-labelledby="tab-trigger-account"
-        hidden
-      >
-        <div class="section-heading">
-          <div>
-            <h2>Account</h2>
-            <p>Keep the basic profile and password tools here without turning the whole product into settings screens.</p>
-          </div>
-        </div>
-
-        <div class="account-grid">
-          <article class="card panel account-panel">
-            <div class="panel-heading">
-              <div>
-                <p class="card-label">Profile</p>
-                <h2>Your account</h2>
-              </div>
-            </div>
-
-            <div class="account-meta-grid">
-              <article class="meta-tile">
-                <p class="card-label">Email</p>
-                <strong id="account-email">member@example.com</strong>
-              </article>
-              <article class="meta-tile">
-                <p class="card-label">Joined</p>
-                <strong id="account-joined">Just now</strong>
-              </article>
-              <article class="meta-tile">
-                <p class="card-label">Email state</p>
-                <strong id="account-email-state">Checking</strong>
-              </article>
-            </div>
-
-            <form class="stack-form" id="profile-form">
-              <label class="form-field">
-                <span>Display name</span>
-                <input id="profile-name" name="name" type="text" maxlength="80" required>
-              </label>
-
-              <label class="form-field">
-                <span>Reading focus</span>
-                <input id="profile-focus" name="focus" type="text" maxlength="80" placeholder="Peace, wisdom, grace, consistency">
-              </label>
-
-              <label class="form-field">
-                <span>Current season</span>
-                <input id="profile-season" name="currentSeason" type="text" maxlength="80" placeholder="Reading through John this month">
-              </label>
-
-              <label class="form-field">
-                <span>Profile note</span>
-                <textarea id="profile-bio" name="bio" rows="4" maxlength="280" placeholder="A short note about what you want Selah to keep in view."></textarea>
-              </label>
-
-              <button class="button button-primary" type="submit">Save Profile</button>
-            </form>
-
-            <p class="status-message is-neutral" id="profile-form-status" aria-live="polite">
-              Update the basic account details that shape your browser and generator experience.
-            </p>
-          </article>
-
-          <article class="card panel account-panel">
-            <div class="panel-heading">
-              <div>
-                <p class="card-label">Preferences</p>
-                <h2>Workspace settings</h2>
-              </div>
-            </div>
-
-            <form class="stack-form" id="settings-form">
-              <label class="form-field">
-                <span>Start on this tab</span>
-                <select id="settings-start-tab" name="startTab" class="form-select">
-                  <option value="browser">Browser</option>
-                  <option value="overview">Overview</option>
-                  <option value="generator">Generator</option>
-                  <option value="library">Library</option>
-                  <option value="account">Account</option>
-                </select>
-              </label>
-
-              <label class="form-field">
-                <span>Preferred translation</span>
-                <select id="settings-preferred-translation" name="preferredTranslationId" class="form-select"></select>
-              </label>
-
-              <label class="form-field">
-                <span>Default generator mode</span>
-                <select id="settings-default-generator-mode" name="defaultGeneratorMode" class="form-select">
-                  <option value="random">Random verse</option>
-                  <option value="daily">Verse of the day</option>
-                  <option value="topic">Topic verse</option>
-                  <option value="testament">Testament verse</option>
-                  <option value="book">Book verse</option>
-                  <option value="chapter">Chapter verse</option>
-                </select>
-              </label>
-
-              <label class="form-field">
-                <span>Selah voice</span>
-                <select id="settings-ai-voice" name="aiVoice" class="form-select">
-                  <option value="grounded">Grounded</option>
-                  <option value="gentle">Gentle</option>
-                  <option value="courageous">Courageous</option>
-                  <option value="poetic">Poetic</option>
-                </select>
-              </label>
-
-              <label class="form-field">
-                <span>Reminder time</span>
-                <input id="settings-reminder-time" name="reminderTime" type="time">
-              </label>
-
-              <label class="toggle-field">
-                <input id="settings-weekly-digest" name="weeklyDigest" type="checkbox">
-                <span>Send the weekly scripture digest</span>
-              </label>
-
-              <label class="toggle-field">
-                <input id="settings-show-verse-reason" name="showVerseReason" type="checkbox">
-                <span>Show why each verse was selected</span>
-              </label>
-
-              <label class="toggle-field">
-                <input id="settings-compact-book-cards" name="compactBookCards" type="checkbox">
-                <span>Use compact book cards in the browser</span>
-              </label>
-
-              <button class="button button-primary" type="submit">Save Settings</button>
-            </form>
-
-            <p class="status-message is-neutral" id="settings-form-status" aria-live="polite">
-              Shape how Selah opens, reads, and presents generated verses.
-            </p>
-          </article>
-
-          <article class="card panel account-panel security-panel">
-            <div class="panel-heading">
-              <div>
-                <p class="card-label">Security</p>
-                <h2>Protect the account</h2>
-              </div>
-            </div>
-
-            <form class="stack-form" id="password-form">
-              <label class="form-field">
-                <span>Current password</span>
-                <input id="password-current" name="currentPassword" type="password" autocomplete="current-password" required>
-              </label>
-
-              <label class="form-field">
-                <span>New password</span>
-                <input id="password-new" name="newPassword" type="password" minlength="8" autocomplete="new-password" required>
-              </label>
-
-              <button class="button button-primary" type="submit">Change Password</button>
-            </form>
-
-            <p class="status-message is-neutral" id="password-form-status" aria-live="polite">
-              Use a password with at least 8 characters.
-            </p>
-
-            <article class="cta-card">
-              <p class="card-label">Delivery</p>
-              <p class="dashboard-card-copy">
-                If you change email settings or want to confirm deliverability again, resend the welcome email from the header.
-              </p>
-            </article>
-          </article>
-        </div>
-      </section>
     </main>
+  </div>
+
+  <div class="settings-modal" id="settings-modal" hidden>
+    <div class="auth-backdrop" data-close-settings></div>
+    <section
+      class="settings-dialog"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="settings-dialog-title"
+    >
+      <button class="modal-close" type="button" data-close-settings aria-label="Close settings">
+        Close
+      </button>
+
+      <p class="card-label">Settings</p>
+      <h2 id="settings-dialog-title">Manage your Selah setup</h2>
+      <p class="settings-dialog-copy">
+        Keep the browser clean while still giving profile, preference, and security controls their own focused menu.
+      </p>
+
+      <div class="account-meta-grid settings-meta-grid">
+        <article class="meta-tile">
+          <p class="card-label">Email</p>
+          <strong id="account-email">member@example.com</strong>
+        </article>
+        <article class="meta-tile">
+          <p class="card-label">Joined</p>
+          <strong id="account-joined">Just now</strong>
+        </article>
+        <article class="meta-tile">
+          <p class="card-label">Email state</p>
+          <strong id="account-email-state">Checking</strong>
+        </article>
+      </div>
+
+      <div class="auth-tabs settings-menu-tabs" role="tablist" aria-label="Settings sections">
+        <button
+          class="auth-tab settings-menu-tab is-active"
+          type="button"
+          data-settings-menu="profile"
+          role="tab"
+          id="settings-menu-profile"
+          aria-controls="settings-panel-profile"
+          aria-selected="true"
+        >
+          Profile
+        </button>
+        <button
+          class="auth-tab settings-menu-tab"
+          type="button"
+          data-settings-menu="preferences"
+          role="tab"
+          id="settings-menu-preferences"
+          aria-controls="settings-panel-preferences"
+          aria-selected="false"
+          tabindex="-1"
+        >
+          Preferences
+        </button>
+        <button
+          class="auth-tab settings-menu-tab"
+          type="button"
+          data-settings-menu="security"
+          role="tab"
+          id="settings-menu-security"
+          aria-controls="settings-panel-security"
+          aria-selected="false"
+          tabindex="-1"
+        >
+          Security
+        </button>
+      </div>
+
+      <div class="settings-menu-shell">
+        <section
+          class="settings-menu-panel is-active"
+          id="settings-panel-profile"
+          data-settings-panel="profile"
+          role="tabpanel"
+          aria-labelledby="settings-menu-profile"
+        >
+          <div class="panel-heading">
+            <div>
+              <p class="card-label">Profile</p>
+              <h3>Your account</h3>
+            </div>
+          </div>
+
+          <form class="stack-form" id="profile-form">
+            <label class="form-field">
+              <span>Display name</span>
+              <input id="profile-name" name="name" type="text" maxlength="80" required>
+            </label>
+
+            <label class="form-field">
+              <span>Reading focus</span>
+              <input id="profile-focus" name="focus" type="text" maxlength="80" placeholder="Peace, wisdom, grace, consistency">
+            </label>
+
+            <label class="form-field">
+              <span>Current season</span>
+              <input id="profile-season" name="currentSeason" type="text" maxlength="80" placeholder="Reading through John this month">
+            </label>
+
+            <label class="form-field">
+              <span>Profile note</span>
+              <textarea id="profile-bio" name="bio" rows="4" maxlength="280" placeholder="A short note about what you want Selah to keep in view."></textarea>
+            </label>
+
+            <button class="button button-primary" type="submit">Save Profile</button>
+          </form>
+
+          <p class="status-message is-neutral" id="profile-form-status" aria-live="polite">
+            Update the account details that shape your browser and generator experience.
+          </p>
+        </section>
+
+        <section
+          class="settings-menu-panel"
+          id="settings-panel-preferences"
+          data-settings-panel="preferences"
+          role="tabpanel"
+          aria-labelledby="settings-menu-preferences"
+          hidden
+        >
+          <div class="panel-heading">
+            <div>
+              <p class="card-label">Preferences</p>
+              <h3>Workspace settings</h3>
+            </div>
+          </div>
+
+          <form class="stack-form" id="settings-form">
+            <label class="form-field">
+              <span>Start on this tab</span>
+              <select id="settings-start-tab" name="startTab" class="form-select">
+                <option value="browser">Browser</option>
+                <option value="overview">Overview</option>
+                <option value="generator">Generator</option>
+                <option value="library">Library</option>
+              </select>
+            </label>
+
+            <label class="form-field">
+              <span>Preferred translation</span>
+              <select id="settings-preferred-translation" name="preferredTranslationId" class="form-select"></select>
+            </label>
+
+            <label class="form-field">
+              <span>Default generator mode</span>
+              <select id="settings-default-generator-mode" name="defaultGeneratorMode" class="form-select">
+                <option value="random">Random verse</option>
+                <option value="daily">Verse of the day</option>
+                <option value="topic">Topic verse</option>
+                <option value="testament">Testament verse</option>
+                <option value="book">Book verse</option>
+                <option value="chapter">Chapter verse</option>
+              </select>
+            </label>
+
+            <label class="form-field">
+              <span>Selah voice</span>
+              <select id="settings-ai-voice" name="aiVoice" class="form-select">
+                <option value="grounded">Grounded</option>
+                <option value="gentle">Gentle</option>
+                <option value="courageous">Courageous</option>
+                <option value="poetic">Poetic</option>
+              </select>
+            </label>
+
+            <label class="form-field">
+              <span>Reminder time</span>
+              <input id="settings-reminder-time" name="reminderTime" type="time">
+            </label>
+
+            <label class="toggle-field">
+              <input id="settings-weekly-digest" name="weeklyDigest" type="checkbox">
+              <span>Send the weekly scripture digest</span>
+            </label>
+
+            <label class="toggle-field">
+              <input id="settings-show-verse-reason" name="showVerseReason" type="checkbox">
+              <span>Show why each verse was selected</span>
+            </label>
+
+            <label class="toggle-field">
+              <input id="settings-compact-book-cards" name="compactBookCards" type="checkbox">
+              <span>Use compact book cards in the browser</span>
+            </label>
+
+            <button class="button button-primary" type="submit">Save Settings</button>
+          </form>
+
+          <p class="status-message is-neutral" id="settings-form-status" aria-live="polite">
+            Shape how Selah opens, reads, and presents generated verses.
+          </p>
+        </section>
+
+        <section
+          class="settings-menu-panel security-panel"
+          id="settings-panel-security"
+          data-settings-panel="security"
+          role="tabpanel"
+          aria-labelledby="settings-menu-security"
+          hidden
+        >
+          <div class="panel-heading">
+            <div>
+              <p class="card-label">Security</p>
+              <h3>Protect the account</h3>
+            </div>
+          </div>
+
+          <form class="stack-form" id="password-form">
+            <label class="form-field">
+              <span>Current password</span>
+              <input id="password-current" name="currentPassword" type="password" autocomplete="current-password" required>
+            </label>
+
+            <label class="form-field">
+              <span>New password</span>
+              <input id="password-new" name="newPassword" type="password" minlength="8" autocomplete="new-password" required>
+            </label>
+
+            <button class="button button-primary" type="submit">Change Password</button>
+          </form>
+
+          <p class="status-message is-neutral" id="password-form-status" aria-live="polite">
+            Use a password with at least 8 characters.
+          </p>
+
+          <article class="cta-card">
+            <p class="card-label">Delivery</p>
+            <p class="dashboard-card-copy">
+              If you want to retry the welcome message, use the resend button in the header.
+            </p>
+          </article>
+        </section>
+      </div>
+    </section>
   </div>
 
   <script src="dashboard.js"></script>
