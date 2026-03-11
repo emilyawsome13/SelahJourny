@@ -1161,11 +1161,6 @@ async function loadWorkspace() {
       return;
     }
 
-     if (sessionData.needsEmailVerification) {
-      redirectToEmailVerification();
-      return;
-    }
-
     applyUser(sessionData.user);
 
     const results = await Promise.allSettled([
@@ -1188,11 +1183,6 @@ async function loadWorkspace() {
   } catch (error) {
     if (error?.status === 401) {
       redirectToLogin();
-      return;
-    }
-
-    if (error?.status === 403 && error?.message?.toLowerCase().includes("verify your email")) {
-      redirectToEmailVerification();
       return;
     }
 

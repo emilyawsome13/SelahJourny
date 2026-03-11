@@ -158,11 +158,11 @@ function isEmailVerified(user) {
 }
 
 function needsEmailVerification(user) {
-  return !isEmailVerified(user);
+  return false;
 }
 
 function getAuthRedirectPath(user) {
-  return needsEmailVerification(user) ? "/verify-email" : "/app";
+  return "/app";
 }
 
 const PRAYER_CATEGORIES = new Set([
@@ -2976,7 +2976,7 @@ function createApp(options = {}) {
         email,
         passwordHash: await bcrypt.hash(password, 12),
         createdAt: new Date().toISOString(),
-        emailVerifiedAt: null,
+        emailVerifiedAt: new Date().toISOString(),
         emailVerification: null,
         phone: {
           number: "",
@@ -2993,11 +2993,6 @@ function createApp(options = {}) {
       await sessionRegenerate(request);
       request.session.userId = user.id;
 
-      const verificationStatus = await issueEmailVerification({
-        user,
-        users,
-        request
-      });
       const emailStatus = await mailer.sendWelcomeEmail(user, {
         phase: "signup",
         appUrl: getWorkspaceUrl(request)
@@ -3006,11 +3001,10 @@ function createApp(options = {}) {
       await storage.writeUsers(users);
 
       response.status(201).json({
-        message: "Your account is ready. Verify your email to continue.",
+        message: "Your account is ready. Opening your Bible library...",
         user: publicUser(user),
         emailStatus,
-        verificationStatus,
-        redirectTo: "/verify-email"
+        redirectTo: "/app"
       });
     } catch (error) {
       next(error);
@@ -3044,22 +3038,6 @@ function createApp(options = {}) {
 
       await sessionRegenerate(request);
       request.session.userId = user.id;
-
-      if (needsEmailVerification(user)) {
-        const verificationStatus = await issueEmailVerification({
-          user,
-          users,
-          request
-        });
-
-        response.json({
-          message: "Verify your email to continue.",
-          user: publicUser(user),
-          verificationStatus,
-          redirectTo: "/verify-email"
-        });
-        return;
-      }
 
       response.json({
         message: `Welcome back, ${user.name}.`,
@@ -3670,22 +3648,9 @@ function createApp(options = {}) {
       await sessionRegenerate(request);
       request.session.userId = user.id;
 
-      let verificationStatus = null;
-
-      if (needsEmailVerification(user)) {
-        verificationStatus = await issueEmailVerification({
-          user,
-          users,
-          request
-        });
-      }
-
       response.json({
-        message: needsEmailVerification(user)
-          ? "Password updated. Verify your email to continue."
-          : "Password updated. Opening your Bible library...",
+        message: "Password updated. Opening your Bible library...",
         user: publicUser(user),
-        verificationStatus,
         redirectTo: getAuthRedirectPath(user)
       });
     } catch (error) {

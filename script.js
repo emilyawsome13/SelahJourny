@@ -251,7 +251,7 @@ async function loadSession() {
     siteState.hasUsers = data.hasUsers !== false;
 
     if (data.authenticated && data.user) {
-      window.location.replace(data.needsEmailVerification ? "/verify-email" : "/app");
+      window.location.replace("/app");
       return;
     }
 
